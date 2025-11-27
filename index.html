@@ -253,12 +253,22 @@
                 }
                 setUiError('');
 
-                const csvContent = generiereCSVString();
-                const subject = encodeURIComponent("Beratungsprotokolle Export");
-                // Wir fügen den CSV Inhalt in den Body ein, da Anhänge per mailto nicht gehen
-                const body = encodeURIComponent("Hier sind die aktuellen Beratungsprotokolle im CSV-Format:\n\n" + csvContent);
+                // 1. Zuerst den Download auslösen, damit der Nutzer die Datei hat
+                exportiereCSV();
+
+                // 2. E-Mail Programm öffnen mit Hinweis
+                const subject = encodeURIComponent("Beratungsprotokolle Export (CSV)");
+                const body = encodeURIComponent(
+                    "Hallo,\n\n" +
+                    "anbei sende ich das exportierte Beratungsprotokoll.\n\n" +
+                    "HINWEIS: Die CSV-Datei wurde soeben automatisch heruntergeladen. Bitte fügen Sie diese manuell als Anhang hinzu.\n\n" +
+                    "Viele Grüße"
+                );
                 
-                window.location.href = `mailto:?subject=${subject}&body=${body}`;
+                // Kurze Verzögerung, damit der Download sicher startet bevor Mail öffnet
+                setTimeout(() => {
+                    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+                }, 500);
             };
 
             // --- UI Components ---
