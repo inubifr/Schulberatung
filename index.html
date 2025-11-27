@@ -43,8 +43,6 @@
         const HelpCircle = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></IconBase>;
         const Mic = (props) => <IconBase {...props}><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></IconBase>;
         const Video = (props) => <IconBase {...props}><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></IconBase>;
-        const Mail = (props) => <IconBase {...props}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></IconBase>;
-
 
         // --- HAUPTAPP ---
 
@@ -57,7 +55,7 @@
                 // Stammdaten
                 schule: '',
                 schulart: '',
-                traeger: '', // Träger
+                traeger: '',
                 ansprechpartner: '',
                 email: '',
                 verantwortlich: '',
@@ -130,14 +128,23 @@
 
             // --- Handler ---
 
-            const handleInput = (kategorie, subkategorie, wert) => {
+            const handleTextChange = (field, value) => {
                 setUiError('');
-                setAktuellesProtokoll(prev => {
-                    if (subkategorie) {
-                        return { ...prev, [kategorie]: { ...prev[kategorie], [subkategorie]: wert } };
+                setAktuellesProtokoll(prev => ({
+                    ...prev,
+                    [field]: value
+                }));
+            };
+
+            const handleNestedTextChange = (kategorie, subfeld, value) => {
+                setUiError('');
+                setAktuellesProtokoll(prev => ({
+                    ...prev,
+                    [kategorie]: {
+                        ...prev[kategorie],
+                        [subfeld]: value
                     }
-                    return { ...prev, [kategorie]: wert };
-                });
+                }));
             };
 
             const handleSingleSelect = (kategorie, subkategorie, wert) => {
@@ -147,14 +154,19 @@
                     const neuerWert = (aktuellerWert === wert) ? '' : wert;
 
                     if (subkategorie) {
-                        return { ...prev, [kategorie]: { ...prev[kategorie], [subkategorie]: neuerWert } };
+                        return { 
+                            ...prev, 
+                            [kategorie]: { 
+                                ...prev[kategorie], 
+                                [subkategorie]: neuerWert 
+                            } 
+                        };
                     } else {
                         return { ...prev, [kategorie]: neuerWert };
                     }
                 });
             };
 
-            // Toggle für Infrastruktur-Beratung (innerhalb der Karten)
             const toggleInfraBeratung = (kategorie) => {
                 setUiError('');
                 setAktuellesProtokoll(prev => ({
@@ -166,7 +178,6 @@
                 }));
             };
 
-            // Toggle für Themen-Kacheln
             const toggleBedarf = (key) => {
                 setUiError('');
                 setAktuellesProtokoll(prev => ({
@@ -238,52 +249,6 @@
                 link.href = URL.createObjectURL(blob);
                 link.download = `beratungsprotokolle_bw_full.csv`;
                 link.click();
-            };
-
-            // NEU: CSV Export + Mail öffnen (VERBESSERT)
-            const exportiereUndSendeMail = () => {
-                if (protokolle.length === 0) {
-                    setUiError('Keine Protokolle zum Exportieren vorhanden.');
-                    return;
-                }
-                
-                // Erst Mail-Fenster öffnen, dann CSV exportieren
-                const schulnamen = [...new Set(protokolle.map(p => p.schule))].join(', ');
-                
-                // Bedarfe zusammenfassen
-                let bedarfeText = '';
-                protokolle.forEach((p, idx) => {
-                    const wuensche = getAlleWuensche(p);
-                    if (wuensche.length > 0) {
-                        bedarfeText += `\n\n${p.schule} (${p.datum}):\n`;
-                        wuensche.forEach(w => {
-                            bedarfeText += `- ${w}\n`;
-                        });
-                    }
-                });
-                
-                const betreff = `Beratungsanfrage (${schulnamen})`;
-                const mailBody = `Sehr geehrte Damen und Herren,
-
-anbei finden Sie die Zusammenfassung unserer Beratungsbedarfe.
-
-WICHTIG: Bitte fügen Sie die exportierte CSV-Datei als Anhang hinzu.
-
-Zusammenfassung der Bedarfsanalyse:${bedarfeText}
-
-Mit freundlichen Grüßen`;
-
-                const mailtoLink = `mailto:?subject=${encodeURIComponent(betreff)}&body=${encodeURIComponent(mailBody)}`;
-                
-                // Öffne Mail-Client
-                window.open(mailtoLink, '_blank');
-                
-                // Nach kurzer Verzögerung CSV exportieren
-                setTimeout(() => {
-                    exportiereCSV();
-                }, 500);
-                
-                setUiError('');
             };
 
             // --- UI Components ---
@@ -362,17 +327,6 @@ Mit freundlichen Grüßen`;
                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{label}</label>
             );
 
-            const StyledInput = (props) => (
-                <input {...props} className="w-full px-2 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors" />
-            );
-
-            const StyledSelect = ({ value, onChange, options, placeholder }) => (
-                <select value={value} onChange={onChange} className="w-full px-2 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors">
-                    <option value="">{placeholder || 'Bitte wählen...'}</option>
-                    {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                </select>
-            );
-
             const aktuelleWuensche = getAlleWuensche(aktuellesProtokoll);
 
             return (
@@ -394,51 +348,86 @@ Mit freundlichen Grüßen`;
                             {/* Stammdaten */}
                             <div className="bg-white p-5 rounded shadow-sm">
                                 <SectionHeader title="1. Organisatorisches" />
-                                {/* Layout auf 4 Spalten angepasst für Träger */}
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                                     <div>
                                         <InputLabel label="Schule *" />
-                                        <StyledInput type="text" value={aktuellesProtokoll.schule} onChange={(e) => handleInput('schule', null, e.target.value)} />
+                                        <input 
+                                            type="text" 
+                                            value={aktuellesProtokoll.schule} 
+                                            onChange={(e) => handleTextChange('schule', e.target.value)}
+                                            className="w-full px-2 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors"
+                                        />
                                     </div>
                                     <div>
                                         <InputLabel label="Schulart" />
-                                        <StyledSelect 
+                                        <select 
                                             value={aktuellesProtokoll.schulart} 
-                                            onChange={(e) => handleInput('schulart', null, e.target.value)} 
-                                            options={['Grundschule', 'Realschule', 'Gemeinschaftsschule', 'Gymnasium', 'SBBZ']} 
-                                        />
+                                            onChange={(e) => handleTextChange('schulart', e.target.value)}
+                                            className="w-full px-2 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors"
+                                        >
+                                            <option value="">Bitte wählen...</option>
+                                            <option value="Grundschule">Grundschule</option>
+                                            <option value="Realschule">Realschule</option>
+                                            <option value="Gemeinschaftsschule">Gemeinschaftsschule</option>
+                                            <option value="Gymnasium">Gymnasium</option>
+                                            <option value="SBBZ">SBBZ</option>
+                                        </select>
                                     </div>
-                                    {/* NEU: TRÄGER */}
                                     <div>
                                         <InputLabel label="Träger" />
-                                        <StyledSelect 
+                                        <select 
                                             value={aktuellesProtokoll.traeger} 
-                                            onChange={(e) => handleInput('traeger', null, e.target.value)} 
-                                            options={['Landkreis', 'Stadt']} 
-                                            placeholder="Wählen..."
-                                        />
+                                            onChange={(e) => handleTextChange('traeger', e.target.value)}
+                                            className="w-full px-2 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors"
+                                        >
+                                            <option value="">Wählen...</option>
+                                            <option value="Landkreis">Landkreis</option>
+                                            <option value="Stadt">Stadt</option>
+                                        </select>
                                     </div>
                                     <div>
                                         <InputLabel label="Datum" />
-                                        <StyledInput type="date" value={aktuellesProtokoll.datum} onChange={(e) => handleInput('datum', null, e.target.value)} />
+                                        <input 
+                                            type="date" 
+                                            value={aktuellesProtokoll.datum} 
+                                            onChange={(e) => handleTextChange('datum', e.target.value)}
+                                            className="w-full px-2 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors"
+                                        />
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div>
                                         <InputLabel label="Ansprechpartner" />
-                                        <StyledInput value={aktuellesProtokoll.ansprechpartner} onChange={(e) => handleInput('ansprechpartner', null, e.target.value)} />
+                                        <input 
+                                            type="text"
+                                            value={aktuellesProtokoll.ansprechpartner} 
+                                            onChange={(e) => handleTextChange('ansprechpartner', e.target.value)}
+                                            className="w-full px-2 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors"
+                                        />
                                     </div>
                                     <div>
                                         <InputLabel label="E-Mail" />
-                                        <StyledInput value={aktuellesProtokoll.email} onChange={(e) => handleInput('email', null, e.target.value)} />
+                                        <input 
+                                            type="email"
+                                            value={aktuellesProtokoll.email} 
+                                            onChange={(e) => handleTextChange('email', e.target.value)}
+                                            className="w-full px-2 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors"
+                                        />
                                     </div>
                                     <div>
                                         <InputLabel label="Verantwortlich" />
-                                        <StyledSelect 
+                                        <select 
                                             value={aktuellesProtokoll.verantwortlich} 
-                                            onChange={(e) => handleInput('verantwortlich', null, e.target.value)} 
-                                            options={['Lorenz', 'Hoch', 'Rutschmann', 'Schnirch', 'Traub']} 
-                                        />
+                                            onChange={(e) => handleTextChange('verantwortlich', e.target.value)}
+                                            className="w-full px-2 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors"
+                                        >
+                                            <option value="">Bitte wählen...</option>
+                                            <option value="Lorenz">Lorenz</option>
+                                            <option value="Hoch">Hoch</option>
+                                            <option value="Rutschmann">Rutschmann</option>
+                                            <option value="Schnirch">Schnirch</option>
+                                            <option value="Traub">Traub</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>
@@ -494,7 +483,12 @@ Mit freundlichen Grüßen`;
                                         <div>
                                             <div className="mb-2">
                                                 <InputLabel label="Anzahl ca." />
-                                                <StyledInput type="text" value={aktuellesProtokoll.ipad.anzahl} onChange={(e) => handleInput('ipad', 'anzahl', e.target.value)} />
+                                                <input 
+                                                    type="text" 
+                                                    value={aktuellesProtokoll.ipad.anzahl} 
+                                                    onChange={(e) => handleNestedTextChange('ipad', 'anzahl', e.target.value)}
+                                                    className="w-full px-2 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors"
+                                                />
                                             </div>
                                             <InputLabel label="Nutzung" />
                                             <div className="grid grid-cols-2 gap-2 mt-1">
@@ -555,7 +549,6 @@ Mit freundlichen Grüßen`;
                                         onClick={() => toggleBedarf('ipadBasics')} 
                                     />
                                     
-                                    {/* GETRENNT: AUDIO */}
                                     <BedarfCard 
                                         label="Audio / Podcast" 
                                         icon={Mic}
@@ -563,7 +556,6 @@ Mit freundlichen Grüßen`;
                                         onClick={() => toggleBedarf('audio')} 
                                     />
                                     
-                                    {/* GETRENNT: VIDEO */}
                                     <BedarfCard 
                                         label="Video / Film" 
                                         icon={Video}
@@ -637,10 +629,11 @@ Mit freundlichen Grüßen`;
                                     </div>
                                     <div>
                                         <InputLabel label="Nächster Termin" />
-                                        <StyledInput 
+                                        <input 
                                             type="date" 
                                             value={aktuellesProtokoll.naechsterTerminDatum} 
-                                            onChange={(e) => handleInput('naechsterTerminDatum', null, e.target.value)} 
+                                            onChange={(e) => handleTextChange('naechsterTerminDatum', e.target.value)}
+                                            className="w-full px-2 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors"
                                         />
                                     </div>
                                 </div>
@@ -691,22 +684,13 @@ Mit freundlichen Grüßen`;
                             <div className="mt-10 bg-white rounded shadow-sm p-5">
                                 <div className="flex items-center justify-between mb-5">
                                     <h2 className="text-xl font-bold text-gray-900">Gespeicherte Protokolle</h2>
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={exportiereCSV}
-                                            className="flex items-center gap-2 px-3 py-1.5 bg-gray-200 text-gray-800 font-semibold rounded hover:bg-gray-300 transition-colors text-sm"
-                                        >
-                                            <Download className="w-4 h-4" />
-                                            CSV Export
-                                        </button>
-                                        <button
-                                            onClick={exportiereUndSendeMail}
-                                            className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition-colors text-sm"
-                                        >
-                                            <Mail className="w-4 h-4" />
-                                            CSV + E-Mail
-                                        </button>
-                                    </div>
+                                    <button
+                                        onClick={exportiereCSV}
+                                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition-colors text-sm shadow-md"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                        CSV Download
+                                    </button>
                                 </div>
 
                                 <div className="overflow-x-auto">
