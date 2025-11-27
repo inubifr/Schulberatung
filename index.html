@@ -1,638 +1,685 @@
-import React, { useState } from 'react';
-import { Download, Plus, Trash2, FileText, CheckCircle, AlertCircle, XCircle, BookOpen, Laptop, Shield, HelpCircle } from 'lucide-react';
-
-function BeratungsprotokollApp() {
-  const [protokolle, setProtokolle] = useState([]);
-  const [uiError, setUiError] = useState('');
-  
-  // Initialer State
-  const emptyState = {
-    // Stammdaten
-    schule: '',
-    schulart: '',
-    ansprechpartner: '',
-    email: '',
-    verantwortlich: '',
-    datum: new Date().toISOString().split('T')[0],
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beratungsprotokoll KMZ</title>
     
-    // Einstieg
-    stimmung: '',
-    digitalisierung: '',
+    <!-- Tailwind CSS für das Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
     
-    // Infrastruktur (Status + Beratungsbedarf Flag)
-    netzwerk: { status: '', beratung: false },
-    ipad: { anzahl: '', nutzung: '', beratung: false },
-    mdm: { system: '', status: '', beratung: false },
-    geraeteverleih: { bekannt: '', beratung: false },
+    <!-- React und ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     
-    // Zentraler Fortbildungsbedarf (Pädagogik & Themen)
-    bedarf: {
-      ipadBasics: false,
-      audioVideo: false,
-      coding: false,
-      druck3d: false,
-      sesam: false,
-      taskcards: false,
-      jugendschutz: false,
-      handyregeln: false,
-      ki: false
-    },
-    
-    // Rahmenbedingungen
-    format: '',
-    zeit: '',
-    naechsterTerminDatum: ''
-  };
+    <!-- Babel für JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  const [aktuellesProtokoll, setAktuellesProtokoll] = useState(emptyState);
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
 
-  // --- Helper: Mapping für lesbare Texte im Export/Zusammenfassung ---
-  const bedarfsLabelMapping = {
-    ipadBasics: 'iPad Basics / Nutzungskonzepte',
-    audioVideo: 'Audio / Video Produktion',
-    coding: 'Coding & Robotik',
-    druck3d: '3D Druck',
-    sesam: 'SESAM Mediathek',
-    taskcards: 'TaskCards',
-    jugendschutz: 'Jugendmedienschutz / Elternabend',
-    handyregeln: 'Handyregeln / Nutzungsordnung',
-    ki: 'Künstliche Intelligenz'
-  };
+    <div id="root"></div>
 
-  const getAlleWuensche = (protokoll) => {
-    let wuensche = [];
-    
-    // 1. Infrastruktur Bedarfe prüfen
-    if (protokoll.netzwerk.beratung) wuensche.push('Infrastruktur: Netzwerk/WLAN Hilfe');
-    if (protokoll.ipad.beratung) wuensche.push('Infrastruktur: iPad Konzept Hilfe');
-    if (protokoll.mdm.beratung) wuensche.push('Infrastruktur: MDM Support');
-    if (protokoll.geraeteverleih.beratung) wuensche.push('Infrastruktur: Geräteverleih Info');
+    <script type="text/babel">
+        const { useState } = React;
 
-    // 2. Pädagogische Themen prüfen
-    Object.keys(protokoll.bedarf).forEach(key => {
-      if (protokoll.bedarf[key]) {
-        wuensche.push(bedarfsLabelMapping[key]);
-      }
-    });
-    
-    return wuensche;
-  };
+        // --- ICONS (Manuell definiert, damit kein Import nötig ist) ---
+        const IconBase = ({ children, className, ...props }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>{children}</svg>
+        );
+        const FileText = (props) => <IconBase {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></IconBase>;
+        const Download = (props) => <IconBase {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></IconBase>;
+        const Plus = (props) => <IconBase {...props}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></IconBase>;
+        const Trash2 = (props) => <IconBase {...props}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></IconBase>;
+        const CheckCircle = (props) => <IconBase {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></IconBase>;
+        const AlertCircle = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></IconBase>;
+        const XCircle = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></IconBase>;
+        const BookOpen = (props) => <IconBase {...props}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></IconBase>;
+        const Laptop = (props) => <IconBase {...props}><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="2" y1="21" x2="22" y2="21"/></IconBase>;
+        const Shield = (props) => <IconBase {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></IconBase>;
+        const HelpCircle = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></IconBase>;
 
-  // --- Handler ---
+        // --- HAUPTAPP ---
 
-  const handleInput = (kategorie, subkategorie, wert) => {
-    setUiError('');
-    setAktuellesProtokoll(prev => {
-      if (subkategorie) {
-        return { ...prev, [kategorie]: { ...prev[kategorie], [subkategorie]: wert } };
-      }
-      return { ...prev, [kategorie]: wert };
-    });
-  };
-
-  const handleSingleSelect = (kategorie, subkategorie, wert) => {
-    setUiError('');
-    setAktuellesProtokoll(prev => {
-      let aktuellerWert = subkategorie ? prev[kategorie][subkategorie] : prev[kategorie];
-      const neuerWert = (aktuellerWert === wert) ? '' : wert;
-
-      if (subkategorie) {
-        return { ...prev, [kategorie]: { ...prev[kategorie], [subkategorie]: neuerWert } };
-      } else {
-        return { ...prev, [kategorie]: neuerWert };
-      }
-    });
-  };
-
-  // Toggle für Infrastruktur-Beratung (innerhalb der Karten)
-  const toggleInfraBeratung = (kategorie) => {
-    setUiError('');
-    setAktuellesProtokoll(prev => ({
-      ...prev,
-      [kategorie]: {
-        ...prev[kategorie],
-        beratung: !prev[kategorie].beratung
-      }
-    }));
-  };
-
-  // Toggle für Themen-Kacheln
-  const toggleBedarf = (key) => {
-    setUiError('');
-    setAktuellesProtokoll(prev => ({
-      ...prev,
-      bedarf: {
-        ...prev.bedarf,
-        [key]: !prev.bedarf[key]
-      }
-    }));
-  };
-
-  const speichernProtokoll = () => {
-    if (!aktuellesProtokoll.schule.trim()) {
-      setUiError('Bitte geben Sie mindestens den Schulnamen ein.');
-      return;
-    }
-    setProtokolle(prev => [...prev, { ...aktuellesProtokoll, id: Date.now() }]);
-    setAktuellesProtokoll(emptyState);
-    setUiError('');
-    window.scrollTo(0, 0);
-  };
-
-  const loeschenProtokoll = (id) => {
-    setProtokolle(prev => prev.filter(p => p.id !== id));
-  };
-
-  const exportiereCSV = () => {
-    if (protokolle.length === 0) {
-      setUiError('Keine Protokolle zum Exportieren vorhanden.');
-      return;
-    }
-    setUiError('');
-
-    const headers = [
-      'Datum', 'Verantwortlich', 'Schule', 'Schulart', 
-      'Ansprechpartner', 'Email', 
-      'Stimmung', 'Digitalisierungsstand',
-      'Netzwerk Status', 'iPad Status', 'MDM Status',
-      'Alle Bedarfe (Infra & Themen)', 'Nächster Termin'
-    ];
-    
-    const rows = protokolle.map(p => {
-      const wuensche = getAlleWuensche(p).join('; ');
-      return [
-        p.datum, 
-        p.verantwortlich, 
-        p.schule, 
-        p.schulart, 
-        p.ansprechpartner, 
-        p.email,
-        p.stimmung,
-        p.digitalisierung,
-        p.netzwerk.status, 
-        p.ipad.nutzung,    
-        p.mdm.status,      
-        wuensche, 
-        p.naechsterTerminDatum
-      ];
-    });
-
-    const csvContent = [
-      headers.map(h => `"${h}"`).join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
-
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `beratungsprotokolle_bw_full.csv`;
-    link.click();
-  };
-
-  // --- UI Components ---
-
-  const RectButton = ({ label, isSelected, onClick }) => {
-    let baseClasses = "w-full text-left px-2 py-1.5 rounded text-sm font-medium transition-all border flex items-center justify-between group";
-    
-    if (isSelected) {
-        baseClasses += " bg-gray-900 text-white border-gray-900 shadow-sm";
-    } else {
-        baseClasses += " bg-white text-gray-600 border-gray-300 hover:border-gray-900 hover:text-gray-900";
-    }
-
-    return (
-      <button onClick={onClick} className={baseClasses}>
-        <span className="truncate mr-2">{label}</span>
-        {isSelected && <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />}
-      </button>
-    );
-  };
-
-  const BeratungToggle = ({ isSelected, onClick }) => {
-    let baseClasses = "mt-3 w-full flex items-center justify-center gap-2 py-1.5 rounded text-xs font-bold uppercase tracking-wide border transition-all ";
-    if (isSelected) {
-        baseClasses += "bg-red-100 text-red-700 border-red-300";
-    } else {
-        baseClasses += "bg-gray-50 text-gray-400 border-gray-200 hover:bg-gray-100 hover:text-gray-600";
-    }
-
-    return (
-        <button onClick={onClick} className={baseClasses}>
-            <HelpCircle className="w-3.5 h-3.5" />
-            {isSelected ? "Beratungsbedarf vorgemerkt" : "Beratungsbedarf?"}
-        </button>
-    );
-  };
-
-  const BedarfCard = ({ label, isSelected, onClick, icon: Icon }) => {
-    let baseClasses = "cursor-pointer relative flex flex-col items-center justify-center p-3 rounded border transition-all h-24 text-center shadow-sm ";
-    
-    if (isSelected) {
-      baseClasses += " bg-red-50 border-red-500 text-red-700 ring-1 ring-red-500";
-    } else {
-      baseClasses += " bg-white border-gray-200 text-gray-600 hover:border-gray-400 hover:shadow-md";
-    }
-
-    return (
-      <div onClick={onClick} className={baseClasses}>
-        {isSelected && (
-          <div className="absolute top-1 right-1">
-            <CheckCircle className="w-4 h-4 text-red-600" />
-          </div>
-        )}
-        <Icon className={`w-6 h-6 mb-2 ${isSelected ? 'text-red-600' : 'text-gray-400'}`} />
-        <span className="text-xs font-bold leading-tight">{label}</span>
-      </div>
-    );
-  };
-
-  const SectionHeader = ({ title }) => (
-    <h2 className="text-lg font-bold text-gray-900 mb-3 border-l-4 border-gray-900 pl-3 uppercase tracking-wide">
-      {title}
-    </h2>
-  );
-
-  const Card = ({ title, children }) => (
-    <div className="bg-white rounded border border-gray-200 shadow-sm hover:shadow-md transition-shadow p-4 h-full flex flex-col justify-between">
-      <div>
-        <h3 className="font-bold text-gray-800 mb-2 text-base">{title}</h3>
-        {children}
-      </div>
-    </div>
-  );
-
-  const InputLabel = ({ label }) => (
-    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{label}</label>
-  );
-
-  const StyledInput = (props) => (
-    <input {...props} className="w-full px-2 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors" />
-  );
-
-  const StyledSelect = ({ value, onChange, options, placeholder }) => (
-    <select value={value} onChange={onChange} className="w-full px-2 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors">
-      <option value="">{placeholder || 'Bitte wählen...'}</option>
-      {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-    </select>
-  );
-
-  const aktuelleWuensche = getAlleWuensche(aktuellesProtokoll);
-
-  return (
-    <div className="min-h-screen bg-gray-100 text-gray-800 font-sans p-4 md:p-6">
-      <div className="max-w-5xl mx-auto">
-        
-        {/* Header */}
-        <div className="bg-white rounded shadow-sm p-5 mb-6 border-t-4 border-gray-900">
-          <div className="flex items-center gap-3 mb-1">
-            <FileText className="w-6 h-6 text-gray-900" />
-            <h1 className="text-2xl font-extrabold text-gray-900">Beratungsprotokoll KMZ</h1>
-          </div>
-          <p className="text-xs text-gray-500 uppercase tracking-wider">Bedarfsanalyse & Schulsupport</p>
-        </div>
-
-        {/* Formular */}
-        <div className="space-y-6">
-          
-          {/* Stammdaten */}
-          <div className="bg-white p-5 rounded shadow-sm">
-            <SectionHeader title="Organisatorisches" />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div>
-                <InputLabel label="Schule *" />
-                <StyledInput type="text" value={aktuellesProtokoll.schule} onChange={(e) => handleInput('schule', null, e.target.value)} />
-              </div>
-              <div>
-                <InputLabel label="Schulart" />
-                <StyledSelect 
-                  value={aktuellesProtokoll.schulart} 
-                  onChange={(e) => handleInput('schulart', null, e.target.value)} 
-                  options={['Grundschule', 'Realschule', 'Gemeinschaftsschule', 'Gymnasium', 'SBBZ']} 
-                />
-              </div>
-              <div>
-                <InputLabel label="Datum" />
-                <StyledInput type="date" value={aktuellesProtokoll.datum} onChange={(e) => handleInput('datum', null, e.target.value)} />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <InputLabel label="Ansprechpartner" />
-                    <StyledInput value={aktuellesProtokoll.ansprechpartner} onChange={(e) => handleInput('ansprechpartner', null, e.target.value)} />
-                </div>
-                <div>
-                    <InputLabel label="E-Mail" />
-                    <StyledInput value={aktuellesProtokoll.email} onChange={(e) => handleInput('email', null, e.target.value)} />
-                </div>
-                <div>
-                    <InputLabel label="Verantwortlich" />
-                    <StyledSelect 
-                        value={aktuellesProtokoll.verantwortlich} 
-                        onChange={(e) => handleInput('verantwortlich', null, e.target.value)} 
-                        options={['Lorenz', 'Hoch', 'Rutschmann', 'Schnirch', 'Traub']} 
-                    />
-                </div>
-            </div>
-          </div>
-
-          {/* Phase 1: Einstieg */}
-          <div className="bg-white p-5 rounded shadow-sm">
-            <SectionHeader title="1. Einstieg" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <InputLabel label="Stimmung" />
-                <div className="grid grid-cols-2 gap-2 mt-1">
-                  {['entspannt', 'gestresst', 'interessiert', 'abwehrend'].map(opt => (
-                    <RectButton 
-                        key={opt} 
-                        label={opt.charAt(0).toUpperCase() + opt.slice(1)} 
-                        isSelected={aktuellesProtokoll.stimmung === opt} 
-                        onClick={() => handleSingleSelect('stimmung', null, opt)} 
-                    />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <InputLabel label="Digitalisierungs-Stand" />
-                <div className="grid grid-cols-1 gap-2 mt-1">
-                  <RectButton label="Gut aufgestellt" isSelected={aktuellesProtokoll.digitalisierung === 'gut'} onClick={() => handleSingleSelect('digitalisierung', null, 'gut')} />
-                  <RectButton label="Probleme vorhanden" isSelected={aktuellesProtokoll.digitalisierung === 'probleme'} onClick={() => handleSingleSelect('digitalisierung', null, 'probleme')} />
-                  <RectButton label="Am Anfang" isSelected={aktuellesProtokoll.digitalisierung === 'anfang'} onClick={() => handleSingleSelect('digitalisierung', null, 'anfang')} />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Phase 2: Infrastruktur (Status + Beratung) */}
-          <div>
-            <SectionHeader title="2. Infrastruktur" />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
-              
-              <Card title="Netzwerk / WLAN">
-                <div>
-                    <InputLabel label="Status (Ist-Zustand)" />
-                    <div className="grid grid-cols-2 gap-2 mt-1">
-                    <RectButton label="Stabil" isSelected={aktuellesProtokoll.netzwerk.status === 'stabil'} onClick={() => handleSingleSelect('netzwerk', 'status', 'stabil')} />
-                    <RectButton label="Instabil" isSelected={aktuellesProtokoll.netzwerk.status === 'instabil'} onClick={() => handleSingleSelect('netzwerk', 'status', 'instabil')} />
-                    </div>
-                </div>
-                <BeratungToggle 
-                    isSelected={aktuellesProtokoll.netzwerk.beratung} 
-                    onClick={() => toggleInfraBeratung('netzwerk')} 
-                />
-              </Card>
-
-              <Card title="iPads / Tablets">
-                <div>
-                    <div className="mb-2">
-                        <InputLabel label="Anzahl ca." />
-                        <StyledInput type="text" value={aktuellesProtokoll.ipad.anzahl} onChange={(e) => handleInput('ipad', 'anzahl', e.target.value)} />
-                    </div>
-                    <InputLabel label="Nutzung" />
-                    <div className="grid grid-cols-2 gap-2 mt-1">
-                        <RectButton label="1:1" isSelected={aktuellesProtokoll.ipad.nutzung === '1zu1'} onClick={() => handleSingleSelect('ipad', 'nutzung', '1zu1')} />
-                        <RectButton label="Koffer" isSelected={aktuellesProtokoll.ipad.nutzung === 'koffer'} onClick={() => handleSingleSelect('ipad', 'nutzung', 'koffer')} />
-                    </div>
-                </div>
-                <BeratungToggle 
-                    isSelected={aktuellesProtokoll.ipad.beratung} 
-                    onClick={() => toggleInfraBeratung('ipad')} 
-                />
-              </Card>
-
-              <Card title="MDM">
-                <div>
-                    <InputLabel label="System läuft?" />
-                    <div className="grid grid-cols-2 gap-2 mt-1">
-                    <RectButton label="Ja, rund" isSelected={aktuellesProtokoll.mdm.status === 'rund'} onClick={() => handleSingleSelect('mdm', 'status', 'rund')} />
-                    <RectButton label="Nein, Probleme" isSelected={aktuellesProtokoll.mdm.status === 'probleme'} onClick={() => handleSingleSelect('mdm', 'status', 'probleme')} />
-                    </div>
-                </div>
-                <BeratungToggle 
-                    isSelected={aktuellesProtokoll.mdm.beratung} 
-                    onClick={() => toggleInfraBeratung('mdm')} 
-                />
-              </Card>
-
-              <Card title="Geräteverleih KMZ">
-                <div>
-                    <InputLabel label="Bekanntheit" />
-                    <div className="flex flex-col gap-2 mt-1">
-                    <RectButton label="Nutzen wir bereits" isSelected={aktuellesProtokoll.geraeteverleih.bekannt === 'nutzen'} onClick={() => handleSingleSelect('geraeteverleih', 'bekannt', 'nutzen')} />
-                    <RectButton label="Nicht bekannt / Interessant" isSelected={aktuellesProtokoll.geraeteverleih.bekannt === 'interessant'} onClick={() => handleSingleSelect('geraeteverleih', 'bekannt', 'interessant')} />
-                    </div>
-                </div>
-                <BeratungToggle 
-                    isSelected={aktuellesProtokoll.geraeteverleih.beratung} 
-                    onClick={() => toggleInfraBeratung('geraeteverleih')} 
-                />
-              </Card>
-            </div>
-          </div>
-
-          {/* NEUER BEREICH: KMZ Angebote & Bedarfe */}
-          <div className="bg-white p-5 rounded shadow-sm border border-gray-200">
-            <div className="flex items-center gap-2 mb-4">
-                <AlertCircle className="w-6 h-6 text-red-600" />
-                <h2 className="text-lg font-bold text-gray-900 uppercase tracking-wide">
-                Wo wird Hilfe / Fortbildung gewünscht?
-                </h2>
-            </div>
+        function BeratungsprotokollApp() {
+            const [protokolle, setProtokolle] = useState([]);
+            const [uiError, setUiError] = useState('');
             
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                <BedarfCard 
-                    label="iPad Basics" 
-                    icon={Laptop}
-                    isSelected={aktuellesProtokoll.bedarf.ipadBasics} 
-                    onClick={() => toggleBedarf('ipadBasics')} 
-                />
-                <BedarfCard 
-                    label="Audio / Video" 
-                    icon={BookOpen}
-                    isSelected={aktuellesProtokoll.bedarf.audioVideo} 
-                    onClick={() => toggleBedarf('audioVideo')} 
-                />
-                <BedarfCard 
-                    label="Coding / Robotik" 
-                    icon={Laptop}
-                    isSelected={aktuellesProtokoll.bedarf.coding} 
-                    onClick={() => toggleBedarf('coding')} 
-                />
-                <BedarfCard 
-                    label="3D Druck" 
-                    icon={Laptop}
-                    isSelected={aktuellesProtokoll.bedarf.druck3d} 
-                    onClick={() => toggleBedarf('druck3d')} 
-                />
-                <BedarfCard 
-                    label="SESAM Mediathek" 
-                    icon={BookOpen}
-                    isSelected={aktuellesProtokoll.bedarf.sesam} 
-                    onClick={() => toggleBedarf('sesam')} 
-                />
-                <BedarfCard 
-                    label="TaskCards" 
-                    icon={BookOpen}
-                    isSelected={aktuellesProtokoll.bedarf.taskcards} 
-                    onClick={() => toggleBedarf('taskcards')} 
-                />
-                <BedarfCard 
-                    label="Jugendschutz" 
-                    icon={Shield}
-                    isSelected={aktuellesProtokoll.bedarf.jugendschutz} 
-                    onClick={() => toggleBedarf('jugendschutz')} 
-                />
-                <BedarfCard 
-                    label="Handyregeln" 
-                    icon={Shield}
-                    isSelected={aktuellesProtokoll.bedarf.handyregeln} 
-                    onClick={() => toggleBedarf('handyregeln')} 
-                />
-                <BedarfCard 
-                    label="Künstliche Intelligenz" 
-                    icon={Laptop}
-                    isSelected={aktuellesProtokoll.bedarf.ki} 
-                    onClick={() => toggleBedarf('ki')} 
-                />
-            </div>
-          </div>
+            // Initialer State
+            const emptyState = {
+                // Stammdaten
+                schule: '',
+                schulart: '',
+                ansprechpartner: '',
+                email: '',
+                verantwortlich: '',
+                datum: new Date().toISOString().split('T')[0],
+                
+                // Einstieg
+                stimmung: '',
+                digitalisierung: '',
+                
+                // Infrastruktur (Status + Beratungsbedarf Flag)
+                netzwerk: { status: '', beratung: false },
+                ipad: { anzahl: '', nutzung: '', beratung: false },
+                mdm: { system: '', status: '', beratung: false },
+                geraeteverleih: { bekannt: '', beratung: false },
+                
+                // Zentraler Fortbildungsbedarf (Pädagogik & Themen)
+                bedarf: {
+                    ipadBasics: false,
+                    audioVideo: false,
+                    coding: false,
+                    druck3d: false,
+                    sesam: false,
+                    taskcards: false,
+                    jugendschutz: false,
+                    handyregeln: false,
+                    ki: false
+                },
+                
+                // Rahmenbedingungen
+                format: '',
+                zeit: '',
+                naechsterTerminDatum: ''
+            };
 
-          {/* Phase 5: Rahmenbedingungen */}
-          <div className="bg-white p-5 rounded shadow-sm">
-            <SectionHeader title="Rahmenbedingungen" />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <InputLabel label="Format" />
-                <div className="space-y-1 mt-1">
-                  {['Praesenz', 'Online', 'Schilf'].map(f => (
-                    <RectButton key={f} label={f} isSelected={aktuellesProtokoll.format === f} onClick={() => handleSingleSelect('format', null, f)} />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <InputLabel label="Zeitfenster" />
-                <div className="space-y-1 mt-1">
-                  <RectButton label="Vormittag" isSelected={aktuellesProtokoll.zeit === 'vormittag'} onClick={() => handleSingleSelect('zeit', null, 'vormittag')} />
-                  <RectButton label="Nachmittag" isSelected={aktuellesProtokoll.zeit === 'nachmittag'} onClick={() => handleSingleSelect('zeit', null, 'nachmittag')} />
-                </div>
-              </div>
-              <div>
-                <InputLabel label="Nächster Termin" />
-                 <StyledInput 
-                    type="date" 
-                    value={aktuellesProtokoll.naechsterTerminDatum} 
-                    onChange={(e) => handleInput('naechsterTerminDatum', null, e.target.value)} 
-                 />
-              </div>
-            </div>
-          </div>
+            const [aktuellesProtokoll, setAktuellesProtokoll] = useState(emptyState);
 
-          {/* AUTOMATISCHE ZUSAMMENFASSUNG */}
-          <div className="bg-gray-900 text-white p-5 rounded-lg shadow-lg border-l-8 border-red-600">
-            <div className="flex items-center gap-3 mb-3 border-b border-gray-700 pb-3">
-              <CheckCircle className="w-5 h-5 text-red-500" />
-              <h2 className="text-lg font-bold">Zusammenfassung der identifizierten Bedarfe</h2>
-            </div>
-            
-            {aktuelleWuensche.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                {aktuelleWuensche.map((wunsch, idx) => (
-                  <div key={idx} className="flex items-start gap-2">
-                    <span className="text-red-500 font-bold">➜</span>
-                    <span>{wunsch}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-400 italic text-sm">Noch keine spezifischen Angebote/Wünsche ausgewählt.</p>
-            )}
-          </div>
+            // --- Helper: Mapping für lesbare Texte im Export/Zusammenfassung ---
+            const bedarfsLabelMapping = {
+                ipadBasics: 'iPad Basics / Nutzungskonzepte',
+                audioVideo: 'Audio / Video Produktion',
+                coding: 'Coding & Robotik',
+                druck3d: '3D Druck',
+                sesam: 'SESAM Mediathek',
+                taskcards: 'TaskCards',
+                jugendschutz: 'Jugendmedienschutz / Elternabend',
+                handyregeln: 'Handyregeln / Nutzungsordnung',
+                ki: 'Künstliche Intelligenz'
+            };
 
-          {/* Speichern Button & Error Message */}
-          <div className="flex flex-col items-end gap-2">
-            {uiError && (
-                <div className="flex items-center gap-2 text-red-600 bg-red-50 px-4 py-2 rounded border border-red-200">
-                    <XCircle className="w-4 h-4" />
-                    <span className="text-sm font-bold">{uiError}</span>
-                </div>
-            )}
-            <button
-              onClick={speichernProtokoll}
-              className="flex items-center gap-2 px-6 py-3 bg-black text-white font-bold rounded hover:bg-gray-800 transition-all shadow-lg border border-gray-800 text-sm"
-            >
-              <Plus className="w-4 h-4" />
-              Protokoll speichern
-            </button>
-          </div>
+            const getAlleWuensche = (protokoll) => {
+                let wuensche = [];
+                
+                // 1. Infrastruktur Bedarfe prüfen
+                if (protokoll.netzwerk.beratung) wuensche.push('Infrastruktur: Netzwerk/WLAN Hilfe');
+                if (protokoll.ipad.beratung) wuensche.push('Infrastruktur: iPad Konzept Hilfe');
+                if (protokoll.mdm.beratung) wuensche.push('Infrastruktur: MDM Support');
+                if (protokoll.geraeteverleih.beratung) wuensche.push('Infrastruktur: Geräteverleih Info');
 
-        </div>
+                // 2. Pädagogische Themen prüfen
+                Object.keys(protokoll.bedarf).forEach(key => {
+                    if (protokoll.bedarf[key]) {
+                        wuensche.push(bedarfsLabelMapping[key]);
+                    }
+                });
+                
+                return wuensche;
+            };
 
-        {/* Tabelle der gespeicherten Protokolle */}
-        {protokolle.length > 0 && (
-          <div className="mt-10 bg-white rounded shadow-sm p-5">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-xl font-bold text-gray-900">Gespeicherte Protokolle</h2>
-              <button
-                onClick={exportiereCSV}
-                className="flex items-center gap-2 px-3 py-1.5 bg-gray-200 text-gray-800 font-semibold rounded hover:bg-gray-300 transition-colors text-sm"
-              >
-                <Download className="w-4 h-4" />
-                CSV Export
-              </button>
-            </div>
+            // --- Handler ---
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-sm">
-                <thead>
-                  <tr className="border-b-2 border-gray-900">
-                    <th className="p-2 font-bold text-gray-900">Schule</th>
-                    <th className="p-2 font-bold text-gray-900">Datum</th>
-                    <th className="p-2 font-bold text-gray-900">Bedarfe (Wünsche)</th>
-                    <th className="p-2 font-bold text-gray-900 w-10"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {protokolle.map((p) => (
-                    <tr key={p.id} className="hover:bg-gray-50">
-                      <td className="p-2 align-top">
-                        <div className="font-bold">{p.schule}</div>
-                        <div className="text-gray-500 text-xs">{p.schulart}</div>
-                      </td>
-                      <td className="p-2 align-top">
-                        <div>{p.datum}</div>
-                        <div className="text-gray-500 text-xs">{p.verantwortlich}</div>
-                      </td>
-                      <td className="p-2 align-top">
-                        {getAlleWuensche(p).length > 0 ? (
-                          <ul className="list-none space-y-1 text-xs">
-                            {getAlleWuensche(p).map((w, i) => (
-                              <li key={i} className="flex items-start gap-1">
-                                <span className="text-red-600 font-bold">➜</span> {w}
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <span className="text-gray-400 italic">-</span>
+            const handleInput = (kategorie, subkategorie, wert) => {
+                setUiError('');
+                setAktuellesProtokoll(prev => {
+                    if (subkategorie) {
+                        return { ...prev, [kategorie]: { ...prev[kategorie], [subkategorie]: wert } };
+                    }
+                    return { ...prev, [kategorie]: wert };
+                });
+            };
+
+            const handleSingleSelect = (kategorie, subkategorie, wert) => {
+                setUiError('');
+                setAktuellesProtokoll(prev => {
+                    let aktuellerWert = subkategorie ? prev[kategorie][subkategorie] : prev[kategorie];
+                    const neuerWert = (aktuellerWert === wert) ? '' : wert;
+
+                    if (subkategorie) {
+                        return { ...prev, [kategorie]: { ...prev[kategorie], [subkategorie]: neuerWert } };
+                    } else {
+                        return { ...prev, [kategorie]: neuerWert };
+                    }
+                });
+            };
+
+            // Toggle für Infrastruktur-Beratung (innerhalb der Karten)
+            const toggleInfraBeratung = (kategorie) => {
+                setUiError('');
+                setAktuellesProtokoll(prev => ({
+                    ...prev,
+                    [kategorie]: {
+                        ...prev[kategorie],
+                        beratung: !prev[kategorie].beratung
+                    }
+                }));
+            };
+
+            // Toggle für Themen-Kacheln
+            const toggleBedarf = (key) => {
+                setUiError('');
+                setAktuellesProtokoll(prev => ({
+                    ...prev,
+                    bedarf: {
+                        ...prev.bedarf,
+                        [key]: !prev.bedarf[key]
+                    }
+                }));
+            };
+
+            const speichernProtokoll = () => {
+                if (!aktuellesProtokoll.schule.trim()) {
+                    setUiError('Bitte geben Sie mindestens den Schulnamen ein.');
+                    return;
+                }
+                setProtokolle(prev => [...prev, { ...aktuellesProtokoll, id: Date.now() }]);
+                setAktuellesProtokoll(emptyState);
+                setUiError('');
+                window.scrollTo(0, 0);
+            };
+
+            const loeschenProtokoll = (id) => {
+                setProtokolle(prev => prev.filter(p => p.id !== id));
+            };
+
+            const exportiereCSV = () => {
+                if (protokolle.length === 0) {
+                    setUiError('Keine Protokolle zum Exportieren vorhanden.');
+                    return;
+                }
+                setUiError('');
+
+                const headers = [
+                    'Datum', 'Verantwortlich', 'Schule', 'Schulart', 
+                    'Ansprechpartner', 'Email', 
+                    'Stimmung', 'Digitalisierungsstand',
+                    'Netzwerk Status', 'iPad Status', 'MDM Status',
+                    'Alle Bedarfe (Infra & Themen)', 'Nächster Termin'
+                ];
+                
+                const rows = protokolle.map(p => {
+                    const wuensche = getAlleWuensche(p).join('; ');
+                    return [
+                        p.datum, 
+                        p.verantwortlich, 
+                        p.schule, 
+                        p.schulart, 
+                        p.ansprechpartner, 
+                        p.email,
+                        p.stimmung,
+                        p.digitalisierung,
+                        p.netzwerk.status, 
+                        p.ipad.nutzung,    
+                        p.mdm.status,      
+                        wuensche, 
+                        p.naechsterTerminDatum
+                    ];
+                });
+
+                const csvContent = [
+                    headers.map(h => `"${h}"`).join(','),
+                    ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+                ].join('\n');
+
+                const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `beratungsprotokolle_bw_full.csv`;
+                link.click();
+            };
+
+            // --- UI Components ---
+
+            const RectButton = ({ label, isSelected, onClick }) => {
+                let baseClasses = "w-full text-left px-2 py-1.5 rounded text-sm font-medium transition-all border flex items-center justify-between group";
+                
+                if (isSelected) {
+                    baseClasses += " bg-gray-900 text-white border-gray-900 shadow-sm";
+                } else {
+                    baseClasses += " bg-white text-gray-600 border-gray-300 hover:border-gray-900 hover:text-gray-900";
+                }
+
+                return (
+                    <button onClick={onClick} className={baseClasses}>
+                        <span className="truncate mr-2">{label}</span>
+                        {isSelected && <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />}
+                    </button>
+                );
+            };
+
+            const BeratungToggle = ({ isSelected, onClick }) => {
+                let baseClasses = "mt-3 w-full flex items-center justify-center gap-2 py-1.5 rounded text-xs font-bold uppercase tracking-wide border transition-all ";
+                if (isSelected) {
+                    baseClasses += "bg-red-100 text-red-700 border-red-300";
+                } else {
+                    baseClasses += "bg-gray-50 text-gray-400 border-gray-200 hover:bg-gray-100 hover:text-gray-600";
+                }
+
+                return (
+                    <button onClick={onClick} className={baseClasses}>
+                        <HelpCircle className="w-3.5 h-3.5" />
+                        {isSelected ? "Beratungsbedarf vorgemerkt" : "Beratungsbedarf?"}
+                    </button>
+                );
+            };
+
+            const BedarfCard = ({ label, isSelected, onClick, icon: Icon }) => {
+                let baseClasses = "cursor-pointer relative flex flex-col items-center justify-center p-3 rounded border transition-all h-24 text-center shadow-sm ";
+                
+                if (isSelected) {
+                    baseClasses += " bg-red-50 border-red-500 text-red-700 ring-1 ring-red-500";
+                } else {
+                    baseClasses += " bg-white border-gray-200 text-gray-600 hover:border-gray-400 hover:shadow-md";
+                }
+
+                return (
+                    <div onClick={onClick} className={baseClasses}>
+                        {isSelected && (
+                            <div className="absolute top-1 right-1">
+                                <CheckCircle className="w-4 h-4 text-red-600" />
+                            </div>
                         )}
-                      </td>
-                      <td className="p-2 align-top text-right">
-                        <button
-                          onClick={() => loeschenProtokoll(p.id)}
-                          className="text-red-600 hover:text-red-800 p-1.5 rounded hover:bg-red-50 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+                        <Icon className={`w-6 h-6 mb-2 ${isSelected ? 'text-red-600' : 'text-gray-400'}`} />
+                        <span className="text-xs font-bold leading-tight">{label}</span>
+                    </div>
+                );
+            };
 
-export default BeratungsprotokollApp;
+            const SectionHeader = ({ title }) => (
+                <h2 className="text-lg font-bold text-gray-900 mb-3 border-l-4 border-gray-900 pl-3 uppercase tracking-wide">
+                    {title}
+                </h2>
+            );
+
+            const Card = ({ title, children }) => (
+                <div className="bg-white rounded border border-gray-200 shadow-sm hover:shadow-md transition-shadow p-4 h-full flex flex-col justify-between">
+                    <div>
+                        <h3 className="font-bold text-gray-800 mb-2 text-base">{title}</h3>
+                        {children}
+                    </div>
+                </div>
+            );
+
+            const InputLabel = ({ label }) => (
+                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{label}</label>
+            );
+
+            const StyledInput = (props) => (
+                <input {...props} className="w-full px-2 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors" />
+            );
+
+            const StyledSelect = ({ value, onChange, options, placeholder }) => (
+                <select value={value} onChange={onChange} className="w-full px-2 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors">
+                    <option value="">{placeholder || 'Bitte wählen...'}</option>
+                    {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                </select>
+            );
+
+            const aktuelleWuensche = getAlleWuensche(aktuellesProtokoll);
+
+            return (
+                <div className="min-h-screen bg-gray-100 text-gray-800 font-sans p-4 md:p-6">
+                    <div className="max-w-5xl mx-auto">
+                        
+                        {/* Header */}
+                        <div className="bg-white rounded shadow-sm p-5 mb-6 border-t-4 border-gray-900">
+                            <div className="flex items-center gap-3 mb-1">
+                                <FileText className="w-6 h-6 text-gray-900" />
+                                <h1 className="text-2xl font-extrabold text-gray-900">Beratungsprotokoll KMZ</h1>
+                            </div>
+                            <p className="text-xs text-gray-500 uppercase tracking-wider">Bedarfsanalyse & Schulsupport</p>
+                        </div>
+
+                        {/* Formular */}
+                        <div className="space-y-6">
+                            
+                            {/* Stammdaten */}
+                            <div className="bg-white p-5 rounded shadow-sm">
+                                <SectionHeader title="Organisatorisches" />
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                    <div>
+                                        <InputLabel label="Schule *" />
+                                        <StyledInput type="text" value={aktuellesProtokoll.schule} onChange={(e) => handleInput('schule', null, e.target.value)} />
+                                    </div>
+                                    <div>
+                                        <InputLabel label="Schulart" />
+                                        <StyledSelect 
+                                            value={aktuellesProtokoll.schulart} 
+                                            onChange={(e) => handleInput('schulart', null, e.target.value)} 
+                                            options={['Grundschule', 'Realschule', 'Gemeinschaftsschule', 'Gymnasium', 'SBBZ']} 
+                                        />
+                                    </div>
+                                    <div>
+                                        <InputLabel label="Datum" />
+                                        <StyledInput type="date" value={aktuellesProtokoll.datum} onChange={(e) => handleInput('datum', null, e.target.value)} />
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <InputLabel label="Ansprechpartner" />
+                                        <StyledInput value={aktuellesProtokoll.ansprechpartner} onChange={(e) => handleInput('ansprechpartner', null, e.target.value)} />
+                                    </div>
+                                    <div>
+                                        <InputLabel label="E-Mail" />
+                                        <StyledInput value={aktuellesProtokoll.email} onChange={(e) => handleInput('email', null, e.target.value)} />
+                                    </div>
+                                    <div>
+                                        <InputLabel label="Verantwortlich" />
+                                        <StyledSelect 
+                                            value={aktuellesProtokoll.verantwortlich} 
+                                            onChange={(e) => handleInput('verantwortlich', null, e.target.value)} 
+                                            options={['Lorenz', 'Hoch', 'Rutschmann', 'Schnirch', 'Traub']} 
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Phase 1: Einstieg */}
+                            <div className="bg-white p-5 rounded shadow-sm">
+                                <SectionHeader title="1. Einstieg" />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <InputLabel label="Stimmung" />
+                                        <div className="grid grid-cols-2 gap-2 mt-1">
+                                            {['entspannt', 'gestresst', 'interessiert', 'abwehrend'].map(opt => (
+                                                <RectButton 
+                                                    key={opt} 
+                                                    label={opt.charAt(0).toUpperCase() + opt.slice(1)} 
+                                                    isSelected={aktuellesProtokoll.stimmung === opt} 
+                                                    onClick={() => handleSingleSelect('stimmung', null, opt)} 
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <InputLabel label="Digitalisierungs-Stand" />
+                                        <div className="grid grid-cols-1 gap-2 mt-1">
+                                            <RectButton label="Gut aufgestellt" isSelected={aktuellesProtokoll.digitalisierung === 'gut'} onClick={() => handleSingleSelect('digitalisierung', null, 'gut')} />
+                                            <RectButton label="Probleme vorhanden" isSelected={aktuellesProtokoll.digitalisierung === 'probleme'} onClick={() => handleSingleSelect('digitalisierung', null, 'probleme')} />
+                                            <RectButton label="Am Anfang" isSelected={aktuellesProtokoll.digitalisierung === 'anfang'} onClick={() => handleSingleSelect('digitalisierung', null, 'anfang')} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Phase 2: Infrastruktur (Status + Beratung) */}
+                            <div>
+                                <SectionHeader title="2. Infrastruktur" />
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+                                    
+                                    <Card title="Netzwerk / WLAN">
+                                        <div>
+                                            <InputLabel label="Status (Ist-Zustand)" />
+                                            <div className="grid grid-cols-2 gap-2 mt-1">
+                                            <RectButton label="Stabil" isSelected={aktuellesProtokoll.netzwerk.status === 'stabil'} onClick={() => handleSingleSelect('netzwerk', 'status', 'stabil')} />
+                                            <RectButton label="Instabil" isSelected={aktuellesProtokoll.netzwerk.status === 'instabil'} onClick={() => handleSingleSelect('netzwerk', 'status', 'instabil')} />
+                                            </div>
+                                        </div>
+                                        <BeratungToggle 
+                                            isSelected={aktuellesProtokoll.netzwerk.beratung} 
+                                            onClick={() => toggleInfraBeratung('netzwerk')} 
+                                        />
+                                    </Card>
+
+                                    <Card title="iPads / Tablets">
+                                        <div>
+                                            <div className="mb-2">
+                                                <InputLabel label="Anzahl ca." />
+                                                <StyledInput type="text" value={aktuellesProtokoll.ipad.anzahl} onChange={(e) => handleInput('ipad', 'anzahl', e.target.value)} />
+                                            </div>
+                                            <InputLabel label="Nutzung" />
+                                            <div className="grid grid-cols-2 gap-2 mt-1">
+                                                <RectButton label="1:1" isSelected={aktuellesProtokoll.ipad.nutzung === '1zu1'} onClick={() => handleSingleSelect('ipad', 'nutzung', '1zu1')} />
+                                                <RectButton label="Koffer" isSelected={aktuellesProtokoll.ipad.nutzung === 'koffer'} onClick={() => handleSingleSelect('ipad', 'nutzung', 'koffer')} />
+                                            </div>
+                                        </div>
+                                        <BeratungToggle 
+                                            isSelected={aktuellesProtokoll.ipad.beratung} 
+                                            onClick={() => toggleInfraBeratung('ipad')} 
+                                        />
+                                    </Card>
+
+                                    <Card title="MDM">
+                                        <div>
+                                            <InputLabel label="System läuft?" />
+                                            <div className="grid grid-cols-2 gap-2 mt-1">
+                                            <RectButton label="Ja, rund" isSelected={aktuellesProtokoll.mdm.status === 'rund'} onClick={() => handleSingleSelect('mdm', 'status', 'rund')} />
+                                            <RectButton label="Nein, Probleme" isSelected={aktuellesProtokoll.mdm.status === 'probleme'} onClick={() => handleSingleSelect('mdm', 'status', 'probleme')} />
+                                            </div>
+                                        </div>
+                                        <BeratungToggle 
+                                            isSelected={aktuellesProtokoll.mdm.beratung} 
+                                            onClick={() => toggleInfraBeratung('mdm')} 
+                                        />
+                                    </Card>
+
+                                    <Card title="Geräteverleih KMZ">
+                                        <div>
+                                            <InputLabel label="Bekanntheit" />
+                                            <div className="flex flex-col gap-2 mt-1">
+                                            <RectButton label="Nutzen wir bereits" isSelected={aktuellesProtokoll.geraeteverleih.bekannt === 'nutzen'} onClick={() => handleSingleSelect('geraeteverleih', 'bekannt', 'nutzen')} />
+                                            <RectButton label="Nicht bekannt / Interessant" isSelected={aktuellesProtokoll.geraeteverleih.bekannt === 'interessant'} onClick={() => handleSingleSelect('geraeteverleih', 'bekannt', 'interessant')} />
+                                            </div>
+                                        </div>
+                                        <BeratungToggle 
+                                            isSelected={aktuellesProtokoll.geraeteverleih.beratung} 
+                                            onClick={() => toggleInfraBeratung('geraeteverleih')} 
+                                        />
+                                    </Card>
+                                </div>
+                            </div>
+
+                            {/* NEUER BEREICH: KMZ Angebote & Bedarfe */}
+                            <div className="bg-white p-5 rounded shadow-sm border border-gray-200">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <AlertCircle className="w-6 h-6 text-red-600" />
+                                    <h2 className="text-lg font-bold text-gray-900 uppercase tracking-wide">
+                                    Wo wird Hilfe / Fortbildung gewünscht?
+                                    </h2>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                                    <BedarfCard 
+                                        label="iPad Basics" 
+                                        icon={Laptop}
+                                        isSelected={aktuellesProtokoll.bedarf.ipadBasics} 
+                                        onClick={() => toggleBedarf('ipadBasics')} 
+                                    />
+                                    <BedarfCard 
+                                        label="Audio / Video" 
+                                        icon={BookOpen}
+                                        isSelected={aktuellesProtokoll.bedarf.audioVideo} 
+                                        onClick={() => toggleBedarf('audioVideo')} 
+                                    />
+                                    <BedarfCard 
+                                        label="Coding / Robotik" 
+                                        icon={Laptop}
+                                        isSelected={aktuellesProtokoll.bedarf.coding} 
+                                        onClick={() => toggleBedarf('coding')} 
+                                    />
+                                    <BedarfCard 
+                                        label="3D Druck" 
+                                        icon={Laptop}
+                                        isSelected={aktuellesProtokoll.bedarf.druck3d} 
+                                        onClick={() => toggleBedarf('druck3d')} 
+                                    />
+                                    <BedarfCard 
+                                        label="SESAM Mediathek" 
+                                        icon={BookOpen}
+                                        isSelected={aktuellesProtokoll.bedarf.sesam} 
+                                        onClick={() => toggleBedarf('sesam')} 
+                                    />
+                                    <BedarfCard 
+                                        label="TaskCards" 
+                                        icon={BookOpen}
+                                        isSelected={aktuellesProtokoll.bedarf.taskcards} 
+                                        onClick={() => toggleBedarf('taskcards')} 
+                                    />
+                                    <BedarfCard 
+                                        label="Jugendschutz" 
+                                        icon={Shield}
+                                        isSelected={aktuellesProtokoll.bedarf.jugendschutz} 
+                                        onClick={() => toggleBedarf('jugendschutz')} 
+                                    />
+                                    <BedarfCard 
+                                        label="Handyregeln" 
+                                        icon={Shield}
+                                        isSelected={aktuellesProtokoll.bedarf.handyregeln} 
+                                        onClick={() => toggleBedarf('handyregeln')} 
+                                    />
+                                    <BedarfCard 
+                                        label="Künstliche Intelligenz" 
+                                        icon={Laptop}
+                                        isSelected={aktuellesProtokoll.bedarf.ki} 
+                                        onClick={() => toggleBedarf('ki')} 
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Phase 5: Rahmenbedingungen */}
+                            <div className="bg-white p-5 rounded shadow-sm">
+                                <SectionHeader title="Rahmenbedingungen" />
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <InputLabel label="Format" />
+                                        <div className="space-y-1 mt-1">
+                                            {['Praesenz', 'Online', 'Schilf'].map(f => (
+                                                <RectButton key={f} label={f} isSelected={aktuellesProtokoll.format === f} onClick={() => handleSingleSelect('format', null, f)} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <InputLabel label="Zeitfenster" />
+                                        <div className="space-y-1 mt-1">
+                                            <RectButton label="Vormittag" isSelected={aktuellesProtokoll.zeit === 'vormittag'} onClick={() => handleSingleSelect('zeit', null, 'vormittag')} />
+                                            <RectButton label="Nachmittag" isSelected={aktuellesProtokoll.zeit === 'nachmittag'} onClick={() => handleSingleSelect('zeit', null, 'nachmittag')} />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <InputLabel label="Nächster Termin" />
+                                        <StyledInput 
+                                            type="date" 
+                                            value={aktuellesProtokoll.naechsterTerminDatum} 
+                                            onChange={(e) => handleInput('naechsterTerminDatum', null, e.target.value)} 
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* AUTOMATISCHE ZUSAMMENFASSUNG */}
+                            <div className="bg-gray-900 text-white p-5 rounded-lg shadow-lg border-l-8 border-red-600">
+                                <div className="flex items-center gap-3 mb-3 border-b border-gray-700 pb-3">
+                                    <CheckCircle className="w-5 h-5 text-red-500" />
+                                    <h2 className="text-lg font-bold">Zusammenfassung der identifizierten Bedarfe</h2>
+                                </div>
+                                
+                                {aktuelleWuensche.length > 0 ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                        {aktuelleWuensche.map((wunsch, idx) => (
+                                            <div key={idx} className="flex items-start gap-2">
+                                                <span className="text-red-500 font-bold">➜</span>
+                                                <span>{wunsch}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-gray-400 italic text-sm">Noch keine spezifischen Angebote/Wünsche ausgewählt.</p>
+                                )}
+                            </div>
+
+                            {/* Speichern Button & Error Message */}
+                            <div className="flex flex-col items-end gap-2">
+                                {uiError && (
+                                    <div className="flex items-center gap-2 text-red-600 bg-red-50 px-4 py-2 rounded border border-red-200">
+                                        <XCircle className="w-4 h-4" />
+                                        <span className="text-sm font-bold">{uiError}</span>
+                                    </div>
+                                )}
+                                <button
+                                    onClick={speichernProtokoll}
+                                    className="flex items-center gap-2 px-6 py-3 bg-black text-white font-bold rounded hover:bg-gray-800 transition-all shadow-lg border border-gray-800 text-sm"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Protokoll speichern
+                                </button>
+                            </div>
+
+                        </div>
+
+                        {/* Tabelle der gespeicherten Protokolle */}
+                        {protokolle.length > 0 && (
+                            <div className="mt-10 bg-white rounded shadow-sm p-5">
+                                <div className="flex items-center justify-between mb-5">
+                                    <h2 className="text-xl font-bold text-gray-900">Gespeicherte Protokolle</h2>
+                                    <button
+                                        onClick={exportiereCSV}
+                                        className="flex items-center gap-2 px-3 py-1.5 bg-gray-200 text-gray-800 font-semibold rounded hover:bg-gray-300 transition-colors text-sm"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                        CSV Export
+                                    </button>
+                                </div>
+
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse text-sm">
+                                        <thead>
+                                            <tr className="border-b-2 border-gray-900">
+                                                <th className="p-2 font-bold text-gray-900">Schule</th>
+                                                <th className="p-2 font-bold text-gray-900">Datum</th>
+                                                <th className="p-2 font-bold text-gray-900">Bedarfe (Wünsche)</th>
+                                                <th className="p-2 font-bold text-gray-900 w-10"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-200">
+                                            {protokolle.map((p) => (
+                                                <tr key={p.id} className="hover:bg-gray-50">
+                                                    <td className="p-2 align-top">
+                                                        <div className="font-bold">{p.schule}</div>
+                                                        <div className="text-gray-500 text-xs">{p.schulart}</div>
+                                                    </td>
+                                                    <td className="p-2 align-top">
+                                                        <div>{p.datum}</div>
+                                                        <div className="text-gray-500 text-xs">{p.verantwortlich}</div>
+                                                    </td>
+                                                    <td className="p-2 align-top">
+                                                        {getAlleWuensche(p).length > 0 ? (
+                                                            <ul className="list-none space-y-1 text-xs">
+                                                                {getAlleWuensche(p).map((w, i) => (
+                                                                    <li key={i} className="flex items-start gap-1">
+                                                                        <span className="text-red-600 font-bold">➜</span> {w}
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        ) : (
+                                                            <span className="text-gray-400 italic">-</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="p-2 align-top text-right">
+                                                        <button
+                                                            onClick={() => loeschenProtokoll(p.id)}
+                                                            className="text-red-600 hover:text-red-800 p-1.5 rounded hover:bg-red-50 transition-colors"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<BeratungsprotokollApp />);
+    </script>
+</body>
+</html>
