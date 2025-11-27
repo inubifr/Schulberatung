@@ -43,6 +43,7 @@
         const HelpCircle = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></IconBase>;
         const Mic = (props) => <IconBase {...props}><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></IconBase>;
         const Video = (props) => <IconBase {...props}><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></IconBase>;
+        const Mail = (props) => <IconBase {...props}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></IconBase>;
 
 
         // --- HAUPTAPP ---
@@ -192,13 +193,8 @@
                 setProtokolle(prev => prev.filter(p => p.id !== id));
             };
 
-            const exportiereCSV = () => {
-                if (protokolle.length === 0) {
-                    setUiError('Keine Protokolle zum Exportieren vorhanden.');
-                    return;
-                }
-                setUiError('');
-
+            // --- CSV Generator Helper ---
+            const generiereCSVString = () => {
                 const headers = [
                     'Datum', 'Verantwortlich', 'Schule', 'Schulart', 'Träger', 
                     'Ansprechpartner', 'Email', 
@@ -232,11 +228,37 @@
                     ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
                 ].join('\n');
 
+                return csvContent;
+            };
+
+            const exportiereCSV = () => {
+                if (protokolle.length === 0) {
+                    setUiError('Keine Protokolle zum Exportieren vorhanden.');
+                    return;
+                }
+                setUiError('');
+
+                const csvContent = generiereCSVString();
                 const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
                 link.download = `beratungsprotokolle_bw_full.csv`;
                 link.click();
+            };
+
+            const versendeEmail = () => {
+                if (protokolle.length === 0) {
+                    setUiError('Keine Protokolle zum Versenden vorhanden.');
+                    return;
+                }
+                setUiError('');
+
+                const csvContent = generiereCSVString();
+                const subject = encodeURIComponent("Beratungsprotokolle Export");
+                // Wir fügen den CSV Inhalt in den Body ein, da Anhänge per mailto nicht gehen
+                const body = encodeURIComponent("Hier sind die aktuellen Beratungsprotokolle im CSV-Format:\n\n" + csvContent);
+                
+                window.location.href = `mailto:?subject=${subject}&body=${body}`;
             };
 
             // --- UI Components ---
@@ -347,7 +369,6 @@
                             {/* Stammdaten */}
                             <div className="bg-white p-5 rounded shadow-sm">
                                 <SectionHeader title="1. Organisatorisches" />
-                                {/* Layout auf 4 Spalten angepasst für Träger */}
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                                     <div>
                                         <InputLabel label="Schule *" />
@@ -361,7 +382,6 @@
                                             options={['Grundschule', 'Realschule', 'Gemeinschaftsschule', 'Gymnasium', 'SBBZ']} 
                                         />
                                     </div>
-                                    {/* NEU: TRÄGER */}
                                     <div>
                                         <InputLabel label="Träger" />
                                         <StyledSelect 
@@ -508,7 +528,6 @@
                                         onClick={() => toggleBedarf('ipadBasics')} 
                                     />
                                     
-                                    {/* GETRENNT: AUDIO */}
                                     <BedarfCard 
                                         label="Audio / Podcast" 
                                         icon={Mic}
@@ -516,7 +535,6 @@
                                         onClick={() => toggleBedarf('audio')} 
                                     />
                                     
-                                    {/* GETRENNT: VIDEO */}
                                     <BedarfCard 
                                         label="Video / Film" 
                                         icon={Video}
@@ -642,15 +660,26 @@
                         {/* Tabelle der gespeicherten Protokolle */}
                         {protokolle.length > 0 && (
                             <div className="mt-10 bg-white rounded shadow-sm p-5">
-                                <div className="flex items-center justify-between mb-5">
+                                <div className="flex flex-col md:flex-row items-center justify-between mb-5 gap-4">
                                     <h2 className="text-xl font-bold text-gray-900">Gespeicherte Protokolle</h2>
-                                    <button
-                                        onClick={exportiereCSV}
-                                        className="flex items-center gap-2 px-3 py-1.5 bg-gray-200 text-gray-800 font-semibold rounded hover:bg-gray-300 transition-colors text-sm"
-                                    >
-                                        <Download className="w-4 h-4" />
-                                        CSV Export
-                                    </button>
+                                    
+                                    {/* EXPORT BUTTONS */}
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={exportiereCSV}
+                                            className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded hover:bg-gray-300 transition-colors text-sm"
+                                        >
+                                            <Download className="w-4 h-4" />
+                                            CSV Exportieren
+                                        </button>
+                                        <button
+                                            onClick={versendeEmail}
+                                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition-colors text-sm"
+                                        >
+                                            <Mail className="w-4 h-4" />
+                                            Als E-Mail senden
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div className="overflow-x-auto">
