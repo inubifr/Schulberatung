@@ -41,6 +41,10 @@
         const Laptop = (props) => <IconBase {...props}><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="2" y1="21" x2="22" y2="21"/></IconBase>;
         const Shield = (props) => <IconBase {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></IconBase>;
         const HelpCircle = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></IconBase>;
+        // Neue Icons für Audio/Video
+        const Mic = (props) => <IconBase {...props}><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></IconBase>;
+        const Video = (props) => <IconBase {...props}><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></IconBase>;
+
 
         // --- HAUPTAPP ---
 
@@ -71,7 +75,8 @@
                 // Zentraler Fortbildungsbedarf (Pädagogik & Themen)
                 bedarf: {
                     ipadBasics: false,
-                    audioVideo: false,
+                    audio: false, // NEU: Getrennt
+                    video: false, // NEU: Getrennt
                     coding: false,
                     druck3d: false,
                     sesam: false,
@@ -92,7 +97,8 @@
             // --- Helper: Mapping für lesbare Texte im Export/Zusammenfassung ---
             const bedarfsLabelMapping = {
                 ipadBasics: 'iPad Basics / Nutzungskonzepte',
-                audioVideo: 'Audio / Video Produktion',
+                audio: 'Audio Produktion / Podcast',
+                video: 'Video Produktion / Film',
                 coding: 'Coding & Robotik',
                 druck3d: '3D Druck',
                 sesam: 'SESAM Mediathek',
@@ -489,12 +495,23 @@
                                         isSelected={aktuellesProtokoll.bedarf.ipadBasics} 
                                         onClick={() => toggleBedarf('ipadBasics')} 
                                     />
+                                    
+                                    {/* GETRENNT: AUDIO */}
                                     <BedarfCard 
-                                        label="Audio / Video" 
-                                        icon={BookOpen}
-                                        isSelected={aktuellesProtokoll.bedarf.audioVideo} 
-                                        onClick={() => toggleBedarf('audioVideo')} 
+                                        label="Audio / Podcast" 
+                                        icon={Mic}
+                                        isSelected={aktuellesProtokoll.bedarf.audio} 
+                                        onClick={() => toggleBedarf('audio')} 
                                     />
+                                    
+                                    {/* GETRENNT: VIDEO */}
+                                    <BedarfCard 
+                                        label="Video / Film" 
+                                        icon={Video}
+                                        isSelected={aktuellesProtokoll.bedarf.video} 
+                                        onClick={() => toggleBedarf('video')} 
+                                    />
+
                                     <BedarfCard 
                                         label="Coding / Robotik" 
                                         icon={Laptop}
