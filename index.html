@@ -1,638 +1,638 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KMZ Beratungsprotokoll</title>
-    <style>
-        :root {
-            --primary: #0056b3; /* KMZ Blau-Ton */
-            --secondary: #f4f4f9;
-            --text: #333;
-            --border: #ddd;
-            --success: #28a745;
-            --danger: #dc3545;
-        }
+import React, { useState } from 'react';
+import { Download, Plus, Trash2, FileText, CheckCircle, AlertCircle, XCircle, BookOpen, Laptop, Shield, HelpCircle } from 'lucide-react';
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--secondary);
-            color: var(--text);
-            margin: 0;
-            padding: 20px;
-            line-height: 1.5;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
-        }
-
-        @media(min-width: 900px) {
-            .container {
-                grid-template-columns: 400px 1fr; /* Sidebar für Formular, Rest für Tabelle */
-            }
-        }
-
-        /* Karten-Design */
-        .card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        h1, h2, h3 {
-            color: var(--primary);
-            margin-top: 0;
-        }
-
-        /* Formular Styling */
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 5px;
-            font-size: 0.9rem;
-        }
-
-        input[type="text"], 
-        select, 
-        textarea {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-
-        textarea {
-            resize: vertical;
-            height: 60px;
-        }
-
-        .checkbox-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .checkbox-item {
-            background: #eee;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-        }
-
-        .checkbox-item input {
-            margin-right: 5px;
-        }
-
-        /* Buttons */
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            color: white;
-            transition: background 0.2s;
-            width: 100%;
-            margin-bottom: 10px;
-        }
-
-        .btn-primary { background-color: var(--primary); }
-        .btn-primary:hover { background-color: #004494; }
-
-        .btn-success { background-color: var(--success); }
-        .btn-success:hover { background-color: #218838; }
-
-        .btn-danger { background-color: var(--danger); }
-        .btn-danger:hover { background-color: #c82333; }
-
-        .btn-outline { 
-            background-color: transparent; 
-            border: 1px solid var(--primary); 
-            color: var(--primary); 
-        }
-        .btn-outline:hover { background-color: #eef; }
-
-        /* Tabelle */
-        .table-wrapper {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-        }
-
-        th, td {
-            text-align: left;
-            padding: 10px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        th {
-            background-color: #f8f9fa;
-            color: var(--primary);
-        }
-
-        tr:hover {
-            background-color: #f1f1f1;
-        }
-
-        .status-badge {
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.8em;
-            color: white;
-        }
-        .bg-green { background-color: var(--success); }
-        .bg-red { background-color: var(--danger); }
-        .bg-grey { background-color: #6c757d; }
-
-        /* Modal Dialog */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            animation: fadeIn 0.2s;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            max-width: 400px;
-            width: 90%;
-            margin: 20px;
-        }
-
-        .btn-modal {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-
-        .btn-cancel {
-            background: #e0e0e0;
-            color: #333;
-        }
-
-        .btn-cancel:hover {
-            background: #d0d0d0;
-        }
-
-        .btn-confirm {
-            background: var(--danger);
-            color: white;
-        }
-
-        .btn-confirm:hover {
-            background: #c82333;
-        }
-
-        /* Notifications */
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            border-radius: 6px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-            color: white;
-            font-weight: 500;
-            z-index: 2000;
-            animation: slideIn 0.3s;
-            max-width: 300px;
-        }
-
-        .notification-success {
-            background: var(--success);
-        }
-
-        .notification-warning {
-            background: #ff9800;
-        }
-
-        .notification-info {
-            background: #2196F3;
-        }
-
-        .fade-out {
-            animation: fadeOut 0.3s;
-            opacity: 0;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
-        }
-
-    </style>
-</head>
-<body>
-
-<div class="container">
+function BeratungsprotokollApp() {
+  const [protokolle, setProtokolle] = useState([]);
+  const [uiError, setUiError] = useState('');
+  
+  // Initialer State
+  const emptyState = {
+    // Stammdaten
+    schule: '',
+    schulart: '',
+    ansprechpartner: '',
+    email: '',
+    verantwortlich: '',
+    datum: new Date().toISOString().split('T')[0],
     
-    <!-- Linke Spalte: Eingabeformular -->
-    <div class="card">
-        <h2>📞 Gesprächsprotokoll</h2>
-        <form id="kmzForm">
-            
-            <!-- Stammdaten -->
-            <h3>1. Stammdaten</h3>
-            <div class="form-group">
-                <label>Schulname</label>
-                <input type="text" id="schule" placeholder="z.B. Grundschule Musterhausen" required>
-            </div>
-            <div class="form-group">
-                <label>Ansprechpartner & Funktion</label>
-                <input type="text" id="kontakt" placeholder="z.B. Fr. Müller (Rektorin)">
-            </div>
-            <div class="form-group">
-                <label>Telefonnummer</label>
-                <input type="text" id="telefon" placeholder="z.B. 07171 / 12345">
-            </div>
-            <div class="form-group">
-                <label>Email</label>
-                <input type="email" id="email" placeholder="z.B. schule@beispiel.de">
-            </div>
-            <div class="form-group">
-                <label>Datum Erstgespräch</label>
-                <input type="date" id="erstgespraech">
-            </div>
-            <div class="form-group">
-                <label>Stimmung / Offenheit</label>
-                <select id="stimmung">
-                    <option value="neutral">Neutral</option>
-                    <option value="positiv">Positiv / Interessiert</option>
-                    <option value="gestresst">Gestresst / Keine Zeit</option>
-                    <option value="abwehrend">Abwehrend</option>
-                </select>
-            </div>
+    // Einstieg
+    stimmung: '',
+    digitalisierung: '',
+    
+    // Infrastruktur (Status + Beratungsbedarf Flag)
+    netzwerk: { status: '', beratung: false },
+    ipad: { anzahl: '', nutzung: '', beratung: false },
+    mdm: { system: '', status: '', beratung: false },
+    geraeteverleih: { bekannt: '', beratung: false },
+    
+    // Zentraler Fortbildungsbedarf (Pädagogik & Themen)
+    bedarf: {
+      ipadBasics: false,
+      audioVideo: false,
+      coding: false,
+      druck3d: false,
+      sesam: false,
+      taskcards: false,
+      jugendschutz: false,
+      handyregeln: false,
+      ki: false
+    },
+    
+    // Rahmenbedingungen
+    format: '',
+    zeit: '',
+    naechsterTerminDatum: ''
+  };
 
-            <!-- Infrastruktur -->
-            <h3>2. Infrastruktur & Technik</h3>
-            <div class="form-group">
-                <label>Netzwerk / WLAN Status</label>
-                <select id="netzwerk">
-                    <option value="ok">Läuft stabil</option>
-                    <option value="probleme">Probleme / Instabil</option>
-                    <option value="aufbau">Noch im Aufbau</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>MDM / Verwaltung</label>
-                <select id="mdm">
-                    <option value="ok">Läuft</option>
-                    <option value="support">Support benötigt</option>
-                    <option value="unbekannt">Nicht bekannt</option>
-                </select>
-            </div>
+  const [aktuellesProtokoll, setAktuellesProtokoll] = useState(emptyState);
 
-            <!-- Themenbedarf -->
-            <h3>3. Themenbedarf (Unterstützung)</h3>
-            <label>Wo wird Hilfe/Fortbildung gewünscht?</label>
-            <div class="checkbox-group form-group">
-                <label class="checkbox-item"><input type="checkbox" name="bedarf" value="iPad_Basics"> iPad Basics</label>
-                <label class="checkbox-item"><input type="checkbox" name="bedarf" value="Audio_Video"> Audio/Video</label>
-                <label class="checkbox-item"><input type="checkbox" name="bedarf" value="Coding"> Coding/Robotik</label>
-                <label class="checkbox-item"><input type="checkbox" name="bedarf" value="3D_Druck"> 3D Druck</label>
-                <label class="checkbox-item"><input type="checkbox" name="bedarf" value="SESAM"> SESAM Mediathek</label>
-                <label class="checkbox-item"><input type="checkbox" name="bedarf" value="TaskCards"> TaskCards</label>
-                <label class="checkbox-item"><input type="checkbox" name="bedarf" value="Jugendmedienschutz"> Jugendmedienschutz</label>
-                <label class="checkbox-item"><input type="checkbox" name="bedarf" value="Handyregeln"> Handyregeln</label>
-            </div>
+  // --- Helper: Mapping für lesbare Texte im Export/Zusammenfassung ---
+  const bedarfsLabelMapping = {
+    ipadBasics: 'iPad Basics / Nutzungskonzepte',
+    audioVideo: 'Audio / Video Produktion',
+    coding: 'Coding & Robotik',
+    druck3d: '3D Druck',
+    sesam: 'SESAM Mediathek',
+    taskcards: 'TaskCards',
+    jugendschutz: 'Jugendmedienschutz / Elternabend',
+    handyregeln: 'Handyregeln / Nutzungsordnung',
+    ki: 'Künstliche Intelligenz'
+  };
 
-            <!-- Format -->
-            <h3>4. Formatwunsch</h3>
-            <div class="form-group">
-                <select id="format">
-                    <option value="egal">Keine Präferenz</option>
-                    <option value="schilf">SchiLf (Wir kommen zur Schule)</option>
-                    <option value="kmz">Präsenz im KMZ</option>
-                    <option value="online">Online</option>
-                </select>
-            </div>
+  const getAlleWuensche = (protokoll) => {
+    let wuensche = [];
+    
+    // 1. Infrastruktur Bedarfe prüfen
+    if (protokoll.netzwerk.beratung) wuensche.push('Infrastruktur: Netzwerk/WLAN Hilfe');
+    if (protokoll.ipad.beratung) wuensche.push('Infrastruktur: iPad Konzept Hilfe');
+    if (protokoll.mdm.beratung) wuensche.push('Infrastruktur: MDM Support');
+    if (protokoll.geraeteverleih.beratung) wuensche.push('Infrastruktur: Geräteverleih Info');
 
-            <!-- Abschluss -->
-            <h3>5. Vereinbarung</h3>
-            <div class="form-group">
-                <label>Notizen / To-Dos</label>
-                <textarea id="notizen" placeholder="z.B. Infomaterial zu 3D Druck senden, Rückruf am Dienstag..."></textarea>
-            </div>
-            <div class="form-group">
-                <label>Nächster Termin</label>
-                <input type="date" id="naechsterTermin">
-            </div>
-            <div class="form-group">
-                <label>Bearbeitet von</label>
-                <select id="bearbeiter">
-                    <option value="">-- Bitte wählen --</option>
-                    <option value="Lorenz">Lorenz</option>
-                    <option value="Hoch">Hoch</option>
-                    <option value="Schnirch">Schnirch</option>
-                    <option value="Rutschmann">Rutschmann</option>
-                    <option value="Traub">Traub</option>
-                </select>
-            </div>
+    // 2. Pädagogische Themen prüfen
+    Object.keys(protokoll.bedarf).forEach(key => {
+      if (protokoll.bedarf[key]) {
+        wuensche.push(bedarfsLabelMapping[key]);
+      }
+    });
+    
+    return wuensche;
+  };
 
-            <button type="submit" class="btn btn-primary">💾 Eintrag speichern</button>
-            <button type="button" class="btn btn-outline" onclick="resetForm()">Formular leeren</button>
-        </form>
-    </div>
+  // --- Handler ---
 
-    <!-- Rechte Spalte: Datentabelle -->
-    <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
-            <h2>📋 Erfasste Schulen (<span id="count">0</span>)</h2>
-            <div>
-                <button onclick="exportToCSV()" class="btn btn-success" style="width:auto; margin-bottom:0;">Excel Export (.csv)</button>
-                <button onclick="clearAllData()" class="btn btn-danger" style="width:auto; margin-bottom:0; margin-left: 10px;">Alles löschen</button>
-            </div>
-        </div>
-        <p style="color:#666; font-size: 0.9rem;">Daten werden automatisch im Browser gespeichert.</p>
-        
-        <div class="table-wrapper">
-            <table id="dataTable">
-                <thead>
-                    <tr>
-                        <th>Schule</th>
-                        <th>Kontakt</th>
-                        <th>Tel / Email</th>
-                        <th>Erstgespräch</th>
-                        <th>Stimmung</th>
-                        <th>Bedarfe</th>
-                        <th>Format</th>
-                        <th>Notizen</th>
-                        <th>Nächster Termin</th>
-                        <th>Bearbeiter</th>
-                        <th>Aktion</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Hier kommen die Daten rein -->
-                </tbody>
-            </table>
-        </div>
-    </div>
+  const handleInput = (kategorie, subkategorie, wert) => {
+    setUiError('');
+    setAktuellesProtokoll(prev => {
+      if (subkategorie) {
+        return { ...prev, [kategorie]: { ...prev[kategorie], [subkategorie]: wert } };
+      }
+      return { ...prev, [kategorie]: wert };
+    });
+  };
 
-</div>
+  const handleSingleSelect = (kategorie, subkategorie, wert) => {
+    setUiError('');
+    setAktuellesProtokoll(prev => {
+      let aktuellerWert = subkategorie ? prev[kategorie][subkategorie] : prev[kategorie];
+      const neuerWert = (aktuellerWert === wert) ? '' : wert;
 
-<script>
-    // Daten im Speicher halten (localStorage ist im iframe nicht verfügbar)
-    let entries = [];
-    renderTable();
+      if (subkategorie) {
+        return { ...prev, [kategorie]: { ...prev[kategorie], [subkategorie]: neuerWert } };
+      } else {
+        return { ...prev, [kategorie]: neuerWert };
+      }
+    });
+  };
 
-    // Datum Erstgespräch auf heute setzen beim Laden
-    document.getElementById('erstgespraech').valueAsDate = new Date();
+  // Toggle für Infrastruktur-Beratung (innerhalb der Karten)
+  const toggleInfraBeratung = (kategorie) => {
+    setUiError('');
+    setAktuellesProtokoll(prev => ({
+      ...prev,
+      [kategorie]: {
+        ...prev[kategorie],
+        beratung: !prev[kategorie].beratung
+      }
+    }));
+  };
 
-    // Formular Submit Handler
-    document.getElementById('kmzForm').addEventListener('submit', function(e) {
-        e.preventDefault();
+  // Toggle für Themen-Kacheln
+  const toggleBedarf = (key) => {
+    setUiError('');
+    setAktuellesProtokoll(prev => ({
+      ...prev,
+      bedarf: {
+        ...prev.bedarf,
+        [key]: !prev.bedarf[key]
+      }
+    }));
+  };
 
-        // Checkboxen auslesen
-        const bedarfe = [];
-        document.querySelectorAll('input[name="bedarf"]:checked').forEach((checkbox) => {
-            bedarfe.push(checkbox.value);
-        });
+  const speichernProtokoll = () => {
+    if (!aktuellesProtokoll.schule.trim()) {
+      setUiError('Bitte geben Sie mindestens den Schulnamen ein.');
+      return;
+    }
+    setProtokolle(prev => [...prev, { ...aktuellesProtokoll, id: Date.now() }]);
+    setAktuellesProtokoll(emptyState);
+    setUiError('');
+    window.scrollTo(0, 0);
+  };
 
-        // Objekt erstellen
-        const newEntry = {
-            id: Date.now(), // Eindeutige ID
-            timestamp: new Date().toLocaleString('de-DE'),
-            schule: document.getElementById('schule').value,
-            kontakt: document.getElementById('kontakt').value,
-            telefon: document.getElementById('telefon').value,
-            email: document.getElementById('email').value,
-            erstgespraech: document.getElementById('erstgespraech').value,
-            stimmung: document.getElementById('stimmung').value,
-            netzwerk: document.getElementById('netzwerk').value,
-            mdm: document.getElementById('mdm').value,
-            bedarfe: bedarfe.join(', '), // Als String speichern für CSV
-            format: document.getElementById('format').value,
-            notizen: document.getElementById('notizen').value,
-            naechsterTermin: document.getElementById('naechsterTermin').value,
-            bearbeiter: document.getElementById('bearbeiter').value
-        };
+  const loeschenProtokoll = (id) => {
+    setProtokolle(prev => prev.filter(p => p.id !== id));
+  };
 
-        // Speichern
-        entries.push(newEntry);
-        renderTable();
-        resetForm();
+  const exportiereCSV = () => {
+    if (protokolle.length === 0) {
+      setUiError('Keine Protokolle zum Exportieren vorhanden.');
+      return;
+    }
+    setUiError('');
 
-        // Erfolgsbestätigung
-        showNotification('✓ Eintrag erfolgreich gespeichert!', 'success');
+    const headers = [
+      'Datum', 'Verantwortlich', 'Schule', 'Schulart', 
+      'Ansprechpartner', 'Email', 
+      'Stimmung', 'Digitalisierungsstand',
+      'Netzwerk Status', 'iPad Status', 'MDM Status',
+      'Alle Bedarfe (Infra & Themen)', 'Nächster Termin'
+    ];
+    
+    const rows = protokolle.map(p => {
+      const wuensche = getAlleWuensche(p).join('; ');
+      return [
+        p.datum, 
+        p.verantwortlich, 
+        p.schule, 
+        p.schulart, 
+        p.ansprechpartner, 
+        p.email,
+        p.stimmung,
+        p.digitalisierung,
+        p.netzwerk.status, 
+        p.ipad.nutzung,    
+        p.mdm.status,      
+        wuensche, 
+        p.naechsterTerminDatum
+      ];
     });
 
-    // Tabelle rendern
-    function renderTable() {
-        const tbody = document.querySelector('#dataTable tbody');
-        tbody.innerHTML = '';
-        document.getElementById('count').innerText = entries.length;
+    const csvContent = [
+      headers.map(h => `"${h}"`).join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
 
-        if (entries.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; color:#999; padding:30px;">Noch keine Einträge vorhanden. Füllen Sie das Formular aus, um zu beginnen.</td></tr>';
-            return;
-        }
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `beratungsprotokolle_bw_full.csv`;
+    link.click();
+  };
 
-        entries.forEach(entry => {
-            const row = document.createElement('tr');
+  // --- UI Components ---
 
-            // Stimmung Farbcode
-            let stimmungColor = 'bg-grey';
-            if(entry.stimmung === 'positiv') stimmungColor = 'bg-green';
-            if(entry.stimmung === 'abwehrend' || entry.stimmung === 'gestresst') stimmungColor = 'bg-red';
-
-            // Tel/Email kombiniert
-            const kontaktInfo = [];
-            if (entry.telefon) kontaktInfo.push('📞 ' + entry.telefon);
-            if (entry.email) kontaktInfo.push('✉️ ' + entry.email);
-            const kontaktDisplay = kontaktInfo.join('<br>') || '-';
-
-            // Datum formatieren
-            const formatDate = (dateStr) => {
-                if (!dateStr) return '-';
-                const date = new Date(dateStr);
-                return date.toLocaleDateString('de-DE');
-            };
-
-            row.innerHTML = `
-                <td><strong>${escapeHtml(entry.schule)}</strong><br><small>${escapeHtml(entry.timestamp)}</small></td>
-                <td>${escapeHtml(entry.kontakt) || '-'}</td>
-                <td style="font-size:0.85em;">${kontaktInfo.map(k => escapeHtml(k)).join('<br>') || '-'}</td>
-                <td>${formatDate(entry.erstgespraech)}</td>
-                <td><span class="status-badge ${stimmungColor}">${escapeHtml(entry.stimmung)}</span></td>
-                <td>${escapeHtml(entry.bedarfe) || '-'}</td>
-                <td>${escapeHtml(entry.format)}</td>
-                <td>${escapeHtml(entry.notizen) || '-'}</td>
-                <td>${formatDate(entry.naechsterTermin)}</td>
-                <td>${escapeHtml(entry.bearbeiter) || '-'}</td>
-                <td><button onclick="deleteEntry(${entry.id})" style="color:red; border:none; background:none; cursor:pointer; font-size:1.2em;" title="Eintrag löschen">❌</button></td>
-            `;
-            tbody.appendChild(row);
-        });
+  const RectButton = ({ label, isSelected, onClick }) => {
+    let baseClasses = "w-full text-left px-2 py-1.5 rounded text-sm font-medium transition-all border flex items-center justify-between group";
+    
+    if (isSelected) {
+        baseClasses += " bg-gray-900 text-white border-gray-900 shadow-sm";
+    } else {
+        baseClasses += " bg-white text-gray-600 border-gray-300 hover:border-gray-900 hover:text-gray-900";
     }
 
-    // HTML Escaping für Sicherheit
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+    return (
+      <button onClick={onClick} className={baseClasses}>
+        <span className="truncate mr-2">{label}</span>
+        {isSelected && <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />}
+      </button>
+    );
+  };
+
+  const BeratungToggle = ({ isSelected, onClick }) => {
+    let baseClasses = "mt-3 w-full flex items-center justify-center gap-2 py-1.5 rounded text-xs font-bold uppercase tracking-wide border transition-all ";
+    if (isSelected) {
+        baseClasses += "bg-red-100 text-red-700 border-red-300";
+    } else {
+        baseClasses += "bg-gray-50 text-gray-400 border-gray-200 hover:bg-gray-100 hover:text-gray-600";
     }
 
-    // Eintrag löschen
-    function deleteEntry(id) {
-        showConfirmDialog('Diesen Eintrag wirklich löschen?', () => {
-            entries = entries.filter(e => e.id !== id);
-            renderTable();
-            showNotification('Eintrag wurde gelöscht.', 'info');
-        });
+    return (
+        <button onClick={onClick} className={baseClasses}>
+            <HelpCircle className="w-3.5 h-3.5" />
+            {isSelected ? "Beratungsbedarf vorgemerkt" : "Beratungsbedarf?"}
+        </button>
+    );
+  };
+
+  const BedarfCard = ({ label, isSelected, onClick, icon: Icon }) => {
+    let baseClasses = "cursor-pointer relative flex flex-col items-center justify-center p-3 rounded border transition-all h-24 text-center shadow-sm ";
+    
+    if (isSelected) {
+      baseClasses += " bg-red-50 border-red-500 text-red-700 ring-1 ring-red-500";
+    } else {
+      baseClasses += " bg-white border-gray-200 text-gray-600 hover:border-gray-400 hover:shadow-md";
     }
 
-    // Alles löschen
-    function clearAllData() {
-        showConfirmDialog('ACHTUNG: Alle erfassten Daten werden gelöscht! Sind Sie sicher?', () => {
-            entries = [];
-            renderTable();
-            showNotification('Alle Daten wurden gelöscht.', 'info');
-        });
-    }
+    return (
+      <div onClick={onClick} className={baseClasses}>
+        {isSelected && (
+          <div className="absolute top-1 right-1">
+            <CheckCircle className="w-4 h-4 text-red-600" />
+          </div>
+        )}
+        <Icon className={`w-6 h-6 mb-2 ${isSelected ? 'text-red-600' : 'text-gray-400'}`} />
+        <span className="text-xs font-bold leading-tight">{label}</span>
+      </div>
+    );
+  };
 
-    // Formular Reset
-    function resetForm() {
-        document.getElementById('kmzForm').reset();
-    }
+  const SectionHeader = ({ title }) => (
+    <h2 className="text-lg font-bold text-gray-900 mb-3 border-l-4 border-gray-900 pl-3 uppercase tracking-wide">
+      {title}
+    </h2>
+  );
 
-    // CSV Export Funktion
-    function exportToCSV() {
-        if (entries.length === 0) {
-            showNotification('Keine Daten zum Exportieren vorhanden.', 'warning');
-            return;
-        }
+  const Card = ({ title, children }) => (
+    <div className="bg-white rounded border border-gray-200 shadow-sm hover:shadow-md transition-shadow p-4 h-full flex flex-col justify-between">
+      <div>
+        <h3 className="font-bold text-gray-800 mb-2 text-base">{title}</h3>
+        {children}
+      </div>
+    </div>
+  );
 
-        // CSV Header mit BOM für Excel-Kompatibilität
-        let csvContent = "\uFEFF"; // BOM damit Excel Umlaute richtig liest
-        csvContent += "Datum;Schule;Kontakt;Telefon;Email;Erstgespräch;Stimmung;Netzwerk;MDM;Bedarfe;Formatwunsch;Notizen;Nächster Termin;Bearbeiter\n";
+  const InputLabel = ({ label }) => (
+    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{label}</label>
+  );
 
-        // Daten Zeilen
-        entries.forEach(e => {
-            // Semikolon und Zeilenumbrüche ersetzen damit CSV nicht kaputt geht
-            const clean = (text) => text ? String(text).replace(/;/g, ",").replace(/\n/g, " ").replace(/\r/g, "") : "";
+  const StyledInput = (props) => (
+    <input {...props} className="w-full px-2 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors" />
+  );
 
-            let row = [
-                clean(e.timestamp),
-                clean(e.schule),
-                clean(e.kontakt),
-                clean(e.telefon),
-                clean(e.email),
-                clean(e.erstgespraech),
-                clean(e.stimmung),
-                clean(e.netzwerk),
-                clean(e.mdm),
-                clean(e.bedarfe),
-                clean(e.format),
-                clean(e.notizen),
-                clean(e.naechsterTermin),
-                clean(e.bearbeiter)
-            ].join(";");
-            csvContent += row + "\n";
-        });
+  const StyledSelect = ({ value, onChange, options, placeholder }) => (
+    <select value={value} onChange={onChange} className="w-full px-2 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors">
+      <option value="">{placeholder || 'Bitte wählen...'}</option>
+      {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+    </select>
+  );
 
-        // Blob erstellen und Download triggern
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", "KMZ_Beratungsprotokoll_" + new Date().toISOString().slice(0,10) + ".csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+  const aktuelleWuensche = getAlleWuensche(aktuellesProtokoll);
 
-        showNotification('CSV-Datei wurde heruntergeladen!', 'success');
-    }
+  return (
+    <div className="min-h-screen bg-gray-100 text-gray-800 font-sans p-4 md:p-6">
+      <div className="max-w-5xl mx-auto">
+        
+        {/* Header */}
+        <div className="bg-white rounded shadow-sm p-5 mb-6 border-t-4 border-gray-900">
+          <div className="flex items-center gap-3 mb-1">
+            <FileText className="w-6 h-6 text-gray-900" />
+            <h1 className="text-2xl font-extrabold text-gray-900">Beratungsprotokoll KMZ</h1>
+          </div>
+          <p className="text-xs text-gray-500 uppercase tracking-wider">Bedarfsanalyse & Schulsupport</p>
+        </div>
 
-    // Custom Confirm Dialog (alert/confirm funktionieren nicht im iframe)
-    function showConfirmDialog(message, onConfirm) {
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <p style="margin-bottom:20px; color:#333;">${escapeHtml(message)}</p>
-                <div style="display:flex; justify-content:flex-end; gap:10px;">
-                    <button class="btn-modal btn-cancel">Abbrechen</button>
-                    <button class="btn-modal btn-confirm">Bestätigen</button>
+        {/* Formular */}
+        <div className="space-y-6">
+          
+          {/* Stammdaten */}
+          <div className="bg-white p-5 rounded shadow-sm">
+            <SectionHeader title="Organisatorisches" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div>
+                <InputLabel label="Schule *" />
+                <StyledInput type="text" value={aktuellesProtokoll.schule} onChange={(e) => handleInput('schule', null, e.target.value)} />
+              </div>
+              <div>
+                <InputLabel label="Schulart" />
+                <StyledSelect 
+                  value={aktuellesProtokoll.schulart} 
+                  onChange={(e) => handleInput('schulart', null, e.target.value)} 
+                  options={['Grundschule', 'Realschule', 'Gemeinschaftsschule', 'Gymnasium', 'SBBZ']} 
+                />
+              </div>
+              <div>
+                <InputLabel label="Datum" />
+                <StyledInput type="date" value={aktuellesProtokoll.datum} onChange={(e) => handleInput('datum', null, e.target.value)} />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <InputLabel label="Ansprechpartner" />
+                    <StyledInput value={aktuellesProtokoll.ansprechpartner} onChange={(e) => handleInput('ansprechpartner', null, e.target.value)} />
+                </div>
+                <div>
+                    <InputLabel label="E-Mail" />
+                    <StyledInput value={aktuellesProtokoll.email} onChange={(e) => handleInput('email', null, e.target.value)} />
+                </div>
+                <div>
+                    <InputLabel label="Verantwortlich" />
+                    <StyledSelect 
+                        value={aktuellesProtokoll.verantwortlich} 
+                        onChange={(e) => handleInput('verantwortlich', null, e.target.value)} 
+                        options={['Lorenz', 'Hoch', 'Rutschmann', 'Schnirch', 'Traub']} 
+                    />
                 </div>
             </div>
-        `;
-        document.body.appendChild(modal);
+          </div>
 
-        modal.querySelector('.btn-cancel').onclick = () => modal.remove();
-        modal.querySelector('.btn-confirm').onclick = () => {
-            modal.remove();
-            onConfirm();
-        };
+          {/* Phase 1: Einstieg */}
+          <div className="bg-white p-5 rounded shadow-sm">
+            <SectionHeader title="1. Einstieg" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <InputLabel label="Stimmung" />
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  {['entspannt', 'gestresst', 'interessiert', 'abwehrend'].map(opt => (
+                    <RectButton 
+                        key={opt} 
+                        label={opt.charAt(0).toUpperCase() + opt.slice(1)} 
+                        isSelected={aktuellesProtokoll.stimmung === opt} 
+                        onClick={() => handleSingleSelect('stimmung', null, opt)} 
+                    />
+                  ))}
+                </div>
+              </div>
+              <div>
+                <InputLabel label="Digitalisierungs-Stand" />
+                <div className="grid grid-cols-1 gap-2 mt-1">
+                  <RectButton label="Gut aufgestellt" isSelected={aktuellesProtokoll.digitalisierung === 'gut'} onClick={() => handleSingleSelect('digitalisierung', null, 'gut')} />
+                  <RectButton label="Probleme vorhanden" isSelected={aktuellesProtokoll.digitalisierung === 'probleme'} onClick={() => handleSingleSelect('digitalisierung', null, 'probleme')} />
+                  <RectButton label="Am Anfang" isSelected={aktuellesProtokoll.digitalisierung === 'anfang'} onClick={() => handleSingleSelect('digitalisierung', null, 'anfang')} />
+                </div>
+              </div>
+            </div>
+          </div>
 
-        // Schließen bei Klick außerhalb
-        modal.onclick = (e) => {
-            if (e.target === modal) modal.remove();
-        };
-    }
+          {/* Phase 2: Infrastruktur (Status + Beratung) */}
+          <div>
+            <SectionHeader title="2. Infrastruktur" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+              
+              <Card title="Netzwerk / WLAN">
+                <div>
+                    <InputLabel label="Status (Ist-Zustand)" />
+                    <div className="grid grid-cols-2 gap-2 mt-1">
+                    <RectButton label="Stabil" isSelected={aktuellesProtokoll.netzwerk.status === 'stabil'} onClick={() => handleSingleSelect('netzwerk', 'status', 'stabil')} />
+                    <RectButton label="Instabil" isSelected={aktuellesProtokoll.netzwerk.status === 'instabil'} onClick={() => handleSingleSelect('netzwerk', 'status', 'instabil')} />
+                    </div>
+                </div>
+                <BeratungToggle 
+                    isSelected={aktuellesProtokoll.netzwerk.beratung} 
+                    onClick={() => toggleInfraBeratung('netzwerk')} 
+                />
+              </Card>
 
-    // Notification System
-    function showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
-        notification.textContent = message;
-        document.body.appendChild(notification);
+              <Card title="iPads / Tablets">
+                <div>
+                    <div className="mb-2">
+                        <InputLabel label="Anzahl ca." />
+                        <StyledInput type="text" value={aktuellesProtokoll.ipad.anzahl} onChange={(e) => handleInput('ipad', 'anzahl', e.target.value)} />
+                    </div>
+                    <InputLabel label="Nutzung" />
+                    <div className="grid grid-cols-2 gap-2 mt-1">
+                        <RectButton label="1:1" isSelected={aktuellesProtokoll.ipad.nutzung === '1zu1'} onClick={() => handleSingleSelect('ipad', 'nutzung', '1zu1')} />
+                        <RectButton label="Koffer" isSelected={aktuellesProtokoll.ipad.nutzung === 'koffer'} onClick={() => handleSingleSelect('ipad', 'nutzung', 'koffer')} />
+                    </div>
+                </div>
+                <BeratungToggle 
+                    isSelected={aktuellesProtokoll.ipad.beratung} 
+                    onClick={() => toggleInfraBeratung('ipad')} 
+                />
+              </Card>
 
-        // Automatisch nach 3 Sekunden entfernen
-        setTimeout(() => {
-            notification.classList.add('fade-out');
-            setTimeout(() => notification.remove(), 300);
-        }, 3000);
-    }
-</script>
+              <Card title="MDM">
+                <div>
+                    <InputLabel label="System läuft?" />
+                    <div className="grid grid-cols-2 gap-2 mt-1">
+                    <RectButton label="Ja, rund" isSelected={aktuellesProtokoll.mdm.status === 'rund'} onClick={() => handleSingleSelect('mdm', 'status', 'rund')} />
+                    <RectButton label="Nein, Probleme" isSelected={aktuellesProtokoll.mdm.status === 'probleme'} onClick={() => handleSingleSelect('mdm', 'status', 'probleme')} />
+                    </div>
+                </div>
+                <BeratungToggle 
+                    isSelected={aktuellesProtokoll.mdm.beratung} 
+                    onClick={() => toggleInfraBeratung('mdm')} 
+                />
+              </Card>
 
-</body>
-</html>
+              <Card title="Geräteverleih KMZ">
+                <div>
+                    <InputLabel label="Bekanntheit" />
+                    <div className="flex flex-col gap-2 mt-1">
+                    <RectButton label="Nutzen wir bereits" isSelected={aktuellesProtokoll.geraeteverleih.bekannt === 'nutzen'} onClick={() => handleSingleSelect('geraeteverleih', 'bekannt', 'nutzen')} />
+                    <RectButton label="Nicht bekannt / Interessant" isSelected={aktuellesProtokoll.geraeteverleih.bekannt === 'interessant'} onClick={() => handleSingleSelect('geraeteverleih', 'bekannt', 'interessant')} />
+                    </div>
+                </div>
+                <BeratungToggle 
+                    isSelected={aktuellesProtokoll.geraeteverleih.beratung} 
+                    onClick={() => toggleInfraBeratung('geraeteverleih')} 
+                />
+              </Card>
+            </div>
+          </div>
+
+          {/* NEUER BEREICH: KMZ Angebote & Bedarfe */}
+          <div className="bg-white p-5 rounded shadow-sm border border-gray-200">
+            <div className="flex items-center gap-2 mb-4">
+                <AlertCircle className="w-6 h-6 text-red-600" />
+                <h2 className="text-lg font-bold text-gray-900 uppercase tracking-wide">
+                Wo wird Hilfe / Fortbildung gewünscht?
+                </h2>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                <BedarfCard 
+                    label="iPad Basics" 
+                    icon={Laptop}
+                    isSelected={aktuellesProtokoll.bedarf.ipadBasics} 
+                    onClick={() => toggleBedarf('ipadBasics')} 
+                />
+                <BedarfCard 
+                    label="Audio / Video" 
+                    icon={BookOpen}
+                    isSelected={aktuellesProtokoll.bedarf.audioVideo} 
+                    onClick={() => toggleBedarf('audioVideo')} 
+                />
+                <BedarfCard 
+                    label="Coding / Robotik" 
+                    icon={Laptop}
+                    isSelected={aktuellesProtokoll.bedarf.coding} 
+                    onClick={() => toggleBedarf('coding')} 
+                />
+                <BedarfCard 
+                    label="3D Druck" 
+                    icon={Laptop}
+                    isSelected={aktuellesProtokoll.bedarf.druck3d} 
+                    onClick={() => toggleBedarf('druck3d')} 
+                />
+                <BedarfCard 
+                    label="SESAM Mediathek" 
+                    icon={BookOpen}
+                    isSelected={aktuellesProtokoll.bedarf.sesam} 
+                    onClick={() => toggleBedarf('sesam')} 
+                />
+                <BedarfCard 
+                    label="TaskCards" 
+                    icon={BookOpen}
+                    isSelected={aktuellesProtokoll.bedarf.taskcards} 
+                    onClick={() => toggleBedarf('taskcards')} 
+                />
+                <BedarfCard 
+                    label="Jugendschutz" 
+                    icon={Shield}
+                    isSelected={aktuellesProtokoll.bedarf.jugendschutz} 
+                    onClick={() => toggleBedarf('jugendschutz')} 
+                />
+                <BedarfCard 
+                    label="Handyregeln" 
+                    icon={Shield}
+                    isSelected={aktuellesProtokoll.bedarf.handyregeln} 
+                    onClick={() => toggleBedarf('handyregeln')} 
+                />
+                <BedarfCard 
+                    label="Künstliche Intelligenz" 
+                    icon={Laptop}
+                    isSelected={aktuellesProtokoll.bedarf.ki} 
+                    onClick={() => toggleBedarf('ki')} 
+                />
+            </div>
+          </div>
+
+          {/* Phase 5: Rahmenbedingungen */}
+          <div className="bg-white p-5 rounded shadow-sm">
+            <SectionHeader title="Rahmenbedingungen" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <InputLabel label="Format" />
+                <div className="space-y-1 mt-1">
+                  {['Praesenz', 'Online', 'Schilf'].map(f => (
+                    <RectButton key={f} label={f} isSelected={aktuellesProtokoll.format === f} onClick={() => handleSingleSelect('format', null, f)} />
+                  ))}
+                </div>
+              </div>
+              <div>
+                <InputLabel label="Zeitfenster" />
+                <div className="space-y-1 mt-1">
+                  <RectButton label="Vormittag" isSelected={aktuellesProtokoll.zeit === 'vormittag'} onClick={() => handleSingleSelect('zeit', null, 'vormittag')} />
+                  <RectButton label="Nachmittag" isSelected={aktuellesProtokoll.zeit === 'nachmittag'} onClick={() => handleSingleSelect('zeit', null, 'nachmittag')} />
+                </div>
+              </div>
+              <div>
+                <InputLabel label="Nächster Termin" />
+                 <StyledInput 
+                    type="date" 
+                    value={aktuellesProtokoll.naechsterTerminDatum} 
+                    onChange={(e) => handleInput('naechsterTerminDatum', null, e.target.value)} 
+                 />
+              </div>
+            </div>
+          </div>
+
+          {/* AUTOMATISCHE ZUSAMMENFASSUNG */}
+          <div className="bg-gray-900 text-white p-5 rounded-lg shadow-lg border-l-8 border-red-600">
+            <div className="flex items-center gap-3 mb-3 border-b border-gray-700 pb-3">
+              <CheckCircle className="w-5 h-5 text-red-500" />
+              <h2 className="text-lg font-bold">Zusammenfassung der identifizierten Bedarfe</h2>
+            </div>
+            
+            {aktuelleWuensche.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                {aktuelleWuensche.map((wunsch, idx) => (
+                  <div key={idx} className="flex items-start gap-2">
+                    <span className="text-red-500 font-bold">➜</span>
+                    <span>{wunsch}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-400 italic text-sm">Noch keine spezifischen Angebote/Wünsche ausgewählt.</p>
+            )}
+          </div>
+
+          {/* Speichern Button & Error Message */}
+          <div className="flex flex-col items-end gap-2">
+            {uiError && (
+                <div className="flex items-center gap-2 text-red-600 bg-red-50 px-4 py-2 rounded border border-red-200">
+                    <XCircle className="w-4 h-4" />
+                    <span className="text-sm font-bold">{uiError}</span>
+                </div>
+            )}
+            <button
+              onClick={speichernProtokoll}
+              className="flex items-center gap-2 px-6 py-3 bg-black text-white font-bold rounded hover:bg-gray-800 transition-all shadow-lg border border-gray-800 text-sm"
+            >
+              <Plus className="w-4 h-4" />
+              Protokoll speichern
+            </button>
+          </div>
+
+        </div>
+
+        {/* Tabelle der gespeicherten Protokolle */}
+        {protokolle.length > 0 && (
+          <div className="mt-10 bg-white rounded shadow-sm p-5">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-xl font-bold text-gray-900">Gespeicherte Protokolle</h2>
+              <button
+                onClick={exportiereCSV}
+                className="flex items-center gap-2 px-3 py-1.5 bg-gray-200 text-gray-800 font-semibold rounded hover:bg-gray-300 transition-colors text-sm"
+              >
+                <Download className="w-4 h-4" />
+                CSV Export
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-sm">
+                <thead>
+                  <tr className="border-b-2 border-gray-900">
+                    <th className="p-2 font-bold text-gray-900">Schule</th>
+                    <th className="p-2 font-bold text-gray-900">Datum</th>
+                    <th className="p-2 font-bold text-gray-900">Bedarfe (Wünsche)</th>
+                    <th className="p-2 font-bold text-gray-900 w-10"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {protokolle.map((p) => (
+                    <tr key={p.id} className="hover:bg-gray-50">
+                      <td className="p-2 align-top">
+                        <div className="font-bold">{p.schule}</div>
+                        <div className="text-gray-500 text-xs">{p.schulart}</div>
+                      </td>
+                      <td className="p-2 align-top">
+                        <div>{p.datum}</div>
+                        <div className="text-gray-500 text-xs">{p.verantwortlich}</div>
+                      </td>
+                      <td className="p-2 align-top">
+                        {getAlleWuensche(p).length > 0 ? (
+                          <ul className="list-none space-y-1 text-xs">
+                            {getAlleWuensche(p).map((w, i) => (
+                              <li key={i} className="flex items-start gap-1">
+                                <span className="text-red-600 font-bold">➜</span> {w}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <span className="text-gray-400 italic">-</span>
+                        )}
+                      </td>
+                      <td className="p-2 align-top text-right">
+                        <button
+                          onClick={() => loeschenProtokoll(p.id)}
+                          className="text-red-600 hover:text-red-800 p-1.5 rounded hover:bg-red-50 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default BeratungsprotokollApp;
