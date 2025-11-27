@@ -240,18 +240,14 @@
                 link.click();
             };
 
-            // NEU: CSV Export + Mail öffnen
+            // NEU: CSV Export + Mail öffnen (VERBESSERT)
             const exportiereUndSendeMail = () => {
                 if (protokolle.length === 0) {
                     setUiError('Keine Protokolle zum Exportieren vorhanden.');
                     return;
                 }
                 
-                // Zuerst CSV exportieren
-                exportiereCSV();
-                
-                // Dann Mail-Fenster öffnen
-                // Nimm das erste Protokoll für den Betreff (oder alle, wenn mehrere)
+                // Erst Mail-Fenster öffnen, dann CSV exportieren
                 const schulnamen = [...new Set(protokolle.map(p => p.schule))].join(', ');
                 
                 // Bedarfe zusammenfassen
@@ -273,12 +269,19 @@ anbei finden Sie die Zusammenfassung unserer Beratungsbedarfe.
 
 WICHTIG: Bitte fügen Sie die exportierte CSV-Datei als Anhang hinzu.
 
-Zusammenfassung der Beratungsbedarfe:${bedarfeText}
+Zusammenfassung der Bedarfsanalyse:${bedarfeText}
 
 Mit freundlichen Grüßen`;
 
                 const mailtoLink = `mailto:?subject=${encodeURIComponent(betreff)}&body=${encodeURIComponent(mailBody)}`;
-                window.location.href = mailtoLink;
+                
+                // Öffne Mail-Client
+                window.open(mailtoLink, '_blank');
+                
+                // Nach kurzer Verzögerung CSV exportieren
+                setTimeout(() => {
+                    exportiereCSV();
+                }, 500);
                 
                 setUiError('');
             };
