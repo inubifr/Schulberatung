@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KMZ Beratungsprotokoll</title>
+    <style>
+        :root {
+            --primary: #0056b3; /* KMZ Blau-Ton */
+            --secondary: #f4f4f9;
+            --text: #333;
+            --border: #ddd;
+            --success: #28a745;
+            --danger: #dc3545;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--secondary);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media(min-width: 900px) {
+            .container {
+                grid-template-columns: 400px 1fr; /* Sidebar für Formular, Rest für Tabelle */
+            }
+        }
+
+        /* Karten-Design */
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        h1, h2, h3 {
+            color: var(--primary);
+            margin-top: 0;
+        }
+
+        /* Formular Styling */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        input[type="text"], 
+        select, 
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            resize: vertical;
+            height: 60px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .checkbox-item {
+            background: #eee;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .checkbox-item input {
+            margin-right: 5px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            transition: background 0.2s;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary { background-color: var(--primary); }
+        .btn-primary:hover { background-color: #004494; }
+
+        .btn-success { background-color: var(--success); }
+        .btn-success:hover { background-color: #218838; }
+
+        .btn-danger { background-color: var(--danger); }
+        .btn-danger:hover { background-color: #c82333; }
+
+        .btn-outline { 
+            background-color: transparent; 
+            border: 1px solid var(--primary); 
+            color: var(--primary); 
+        }
+        .btn-outline:hover { background-color: #eef; }
+
+        /* Tabelle */
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: #f8f9fa;
+            color: var(--primary);
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .status-badge {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            color: white;
+        }
+        .bg-green { background-color: var(--success); }
+        .bg-red { background-color: var(--danger); }
+        .bg-grey { background-color: #6c757d; }
+
+        /* Modal Dialog */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.2s;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+            margin: 20px;
+        }
+
+        .btn-modal {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-cancel:hover {
+            background: #d0d0d0;
+        }
+
+        .btn-confirm {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-confirm:hover {
+            background: #c82333;
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 6px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            color: white;
+            font-weight: 500;
+            z-index: 2000;
+            animation: slideIn 0.3s;
+            max-width: 300px;
+        }
+
+        .notification-success {
+            background: var(--success);
+        }
+
+        .notification-warning {
+            background: #ff9800;
+        }
+
+        .notification-info {
+            background: #2196F3;
+        }
+
+        .fade-out {
+            animation: fadeOut 0.3s;
+            opacity: 0;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <!-- Linke Spalte: Eingabeformular -->
+    <div class="card">
+        <h2>📞 Gesprächsprotokoll</h2>
+        <form id="kmzForm">
+            
+            <!-- Stammdaten -->
+            <h3>1. Stammdaten</h3>
+            <div class="form-group">
+                <label>Schulname</label>
+                <input type="text" id="schule" placeholder="z.B. Grundschule Musterhausen" required>
+            </div>
+            <div class="form-group">
+                <label>Ansprechpartner & Funktion</label>
+                <input type="text" id="kontakt" placeholder="z.B. Fr. Müller (Rektorin)">
+            </div>
+            <div class="form-group">
+                <label>Telefonnummer</label>
+                <input type="text" id="telefon" placeholder="z.B. 07171 / 12345">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="email" placeholder="z.B. schule@beispiel.de">
+            </div>
+            <div class="form-group">
+                <label>Datum Erstgespräch</label>
+                <input type="date" id="erstgespraech">
+            </div>
+            <div class="form-group">
+                <label>Stimmung / Offenheit</label>
+                <select id="stimmung">
+                    <option value="neutral">Neutral</option>
+                    <option value="positiv">Positiv / Interessiert</option>
+                    <option value="gestresst">Gestresst / Keine Zeit</option>
+                    <option value="abwehrend">Abwehrend</option>
+                </select>
+            </div>
+
+            <!-- Infrastruktur -->
+            <h3>2. Infrastruktur & Technik</h3>
+            <div class="form-group">
+                <label>Netzwerk / WLAN Status</label>
+                <select id="netzwerk">
+                    <option value="ok">Läuft stabil</option>
+                    <option value="probleme">Probleme / Instabil</option>
+                    <option value="aufbau">Noch im Aufbau</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>MDM / Verwaltung</label>
+                <select id="mdm">
+                    <option value="ok">Läuft</option>
+                    <option value="support">Support benötigt</option>
+                    <option value="unbekannt">Nicht bekannt</option>
+                </select>
+            </div>
+
+            <!-- Themenbedarf -->
+            <h3>3. Themenbedarf (Unterstützung)</h3>
+            <label>Wo wird Hilfe/Fortbildung gewünscht?</label>
+            <div class="checkbox-group form-group">
+                <label class="checkbox-item"><input type="checkbox" name="bedarf" value="iPad_Basics"> iPad Basics</label>
+                <label class="checkbox-item"><input type="checkbox" name="bedarf" value="Audio_Video"> Audio/Video</label>
+                <label class="checkbox-item"><input type="checkbox" name="bedarf" value="Coding"> Coding/Robotik</label>
+                <label class="checkbox-item"><input type="checkbox" name="bedarf" value="3D_Druck"> 3D Druck</label>
+                <label class="checkbox-item"><input type="checkbox" name="bedarf" value="SESAM"> SESAM Mediathek</label>
+                <label class="checkbox-item"><input type="checkbox" name="bedarf" value="TaskCards"> TaskCards</label>
+                <label class="checkbox-item"><input type="checkbox" name="bedarf" value="Jugendmedienschutz"> Jugendmedienschutz</label>
+                <label class="checkbox-item"><input type="checkbox" name="bedarf" value="Handyregeln"> Handyregeln</label>
+            </div>
+
+            <!-- Format -->
+            <h3>4. Formatwunsch</h3>
+            <div class="form-group">
+                <select id="format">
+                    <option value="egal">Keine Präferenz</option>
+                    <option value="schilf">SchiLf (Wir kommen zur Schule)</option>
+                    <option value="kmz">Präsenz im KMZ</option>
+                    <option value="online">Online</option>
+                </select>
+            </div>
+
+            <!-- Abschluss -->
+            <h3>5. Vereinbarung</h3>
+            <div class="form-group">
+                <label>Notizen / To-Dos</label>
+                <textarea id="notizen" placeholder="z.B. Infomaterial zu 3D Druck senden, Rückruf am Dienstag..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Nächster Termin</label>
+                <input type="date" id="naechsterTermin">
+            </div>
+            <div class="form-group">
+                <label>Bearbeitet von</label>
+                <select id="bearbeiter">
+                    <option value="">-- Bitte wählen --</option>
+                    <option value="Lorenz">Lorenz</option>
+                    <option value="Hoch">Hoch</option>
+                    <option value="Schnirch">Schnirch</option>
+                    <option value="Rutschmann">Rutschmann</option>
+                    <option value="Traub">Traub</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary">💾 Eintrag speichern</button>
+            <button type="button" class="btn btn-outline" onclick="resetForm()">Formular leeren</button>
+        </form>
+    </div>
+
+    <!-- Rechte Spalte: Datentabelle -->
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+            <h2>📋 Erfasste Schulen (<span id="count">0</span>)</h2>
+            <div>
+                <button onclick="exportToCSV()" class="btn btn-success" style="width:auto; margin-bottom:0;">Excel Export (.csv)</button>
+                <button onclick="clearAllData()" class="btn btn-danger" style="width:auto; margin-bottom:0; margin-left: 10px;">Alles löschen</button>
+            </div>
+        </div>
+        <p style="color:#666; font-size: 0.9rem;">Daten werden automatisch im Browser gespeichert.</p>
+        
+        <div class="table-wrapper">
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>Schule</th>
+                        <th>Kontakt</th>
+                        <th>Tel / Email</th>
+                        <th>Erstgespräch</th>
+                        <th>Stimmung</th>
+                        <th>Bedarfe</th>
+                        <th>Format</th>
+                        <th>Notizen</th>
+                        <th>Nächster Termin</th>
+                        <th>Bearbeiter</th>
+                        <th>Aktion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Hier kommen die Daten rein -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Daten im Speicher halten (localStorage ist im iframe nicht verfügbar)
+    let entries = [];
+    renderTable();
+
+    // Datum Erstgespräch auf heute setzen beim Laden
+    document.getElementById('erstgespraech').valueAsDate = new Date();
+
+    // Formular Submit Handler
+    document.getElementById('kmzForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // Checkboxen auslesen
+        const bedarfe = [];
+        document.querySelectorAll('input[name="bedarf"]:checked').forEach((checkbox) => {
+            bedarfe.push(checkbox.value);
+        });
+
+        // Objekt erstellen
+        const newEntry = {
+            id: Date.now(), // Eindeutige ID
+            timestamp: new Date().toLocaleString('de-DE'),
+            schule: document.getElementById('schule').value,
+            kontakt: document.getElementById('kontakt').value,
+            telefon: document.getElementById('telefon').value,
+            email: document.getElementById('email').value,
+            erstgespraech: document.getElementById('erstgespraech').value,
+            stimmung: document.getElementById('stimmung').value,
+            netzwerk: document.getElementById('netzwerk').value,
+            mdm: document.getElementById('mdm').value,
+            bedarfe: bedarfe.join(', '), // Als String speichern für CSV
+            format: document.getElementById('format').value,
+            notizen: document.getElementById('notizen').value,
+            naechsterTermin: document.getElementById('naechsterTermin').value,
+            bearbeiter: document.getElementById('bearbeiter').value
+        };
+
+        // Speichern
+        entries.push(newEntry);
+        renderTable();
+        resetForm();
+
+        // Erfolgsbestätigung
+        showNotification('✓ Eintrag erfolgreich gespeichert!', 'success');
+    });
+
+    // Tabelle rendern
+    function renderTable() {
+        const tbody = document.querySelector('#dataTable tbody');
+        tbody.innerHTML = '';
+        document.getElementById('count').innerText = entries.length;
+
+        if (entries.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; color:#999; padding:30px;">Noch keine Einträge vorhanden. Füllen Sie das Formular aus, um zu beginnen.</td></tr>';
+            return;
+        }
+
+        entries.forEach(entry => {
+            const row = document.createElement('tr');
+
+            // Stimmung Farbcode
+            let stimmungColor = 'bg-grey';
+            if(entry.stimmung === 'positiv') stimmungColor = 'bg-green';
+            if(entry.stimmung === 'abwehrend' || entry.stimmung === 'gestresst') stimmungColor = 'bg-red';
+
+            // Tel/Email kombiniert
+            const kontaktInfo = [];
+            if (entry.telefon) kontaktInfo.push('📞 ' + entry.telefon);
+            if (entry.email) kontaktInfo.push('✉️ ' + entry.email);
+            const kontaktDisplay = kontaktInfo.join('<br>') || '-';
+
+            // Datum formatieren
+            const formatDate = (dateStr) => {
+                if (!dateStr) return '-';
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('de-DE');
+            };
+
+            row.innerHTML = `
+                <td><strong>${escapeHtml(entry.schule)}</strong><br><small>${escapeHtml(entry.timestamp)}</small></td>
+                <td>${escapeHtml(entry.kontakt) || '-'}</td>
+                <td style="font-size:0.85em;">${kontaktInfo.map(k => escapeHtml(k)).join('<br>') || '-'}</td>
+                <td>${formatDate(entry.erstgespraech)}</td>
+                <td><span class="status-badge ${stimmungColor}">${escapeHtml(entry.stimmung)}</span></td>
+                <td>${escapeHtml(entry.bedarfe) || '-'}</td>
+                <td>${escapeHtml(entry.format)}</td>
+                <td>${escapeHtml(entry.notizen) || '-'}</td>
+                <td>${formatDate(entry.naechsterTermin)}</td>
+                <td>${escapeHtml(entry.bearbeiter) || '-'}</td>
+                <td><button onclick="deleteEntry(${entry.id})" style="color:red; border:none; background:none; cursor:pointer; font-size:1.2em;" title="Eintrag löschen">❌</button></td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    // HTML Escaping für Sicherheit
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Eintrag löschen
+    function deleteEntry(id) {
+        showConfirmDialog('Diesen Eintrag wirklich löschen?', () => {
+            entries = entries.filter(e => e.id !== id);
+            renderTable();
+            showNotification('Eintrag wurde gelöscht.', 'info');
+        });
+    }
+
+    // Alles löschen
+    function clearAllData() {
+        showConfirmDialog('ACHTUNG: Alle erfassten Daten werden gelöscht! Sind Sie sicher?', () => {
+            entries = [];
+            renderTable();
+            showNotification('Alle Daten wurden gelöscht.', 'info');
+        });
+    }
+
+    // Formular Reset
+    function resetForm() {
+        document.getElementById('kmzForm').reset();
+    }
+
+    // CSV Export Funktion
+    function exportToCSV() {
+        if (entries.length === 0) {
+            showNotification('Keine Daten zum Exportieren vorhanden.', 'warning');
+            return;
+        }
+
+        // CSV Header mit BOM für Excel-Kompatibilität
+        let csvContent = "\uFEFF"; // BOM damit Excel Umlaute richtig liest
+        csvContent += "Datum;Schule;Kontakt;Telefon;Email;Erstgespräch;Stimmung;Netzwerk;MDM;Bedarfe;Formatwunsch;Notizen;Nächster Termin;Bearbeiter\n";
+
+        // Daten Zeilen
+        entries.forEach(e => {
+            // Semikolon und Zeilenumbrüche ersetzen damit CSV nicht kaputt geht
+            const clean = (text) => text ? String(text).replace(/;/g, ",").replace(/\n/g, " ").replace(/\r/g, "") : "";
+
+            let row = [
+                clean(e.timestamp),
+                clean(e.schule),
+                clean(e.kontakt),
+                clean(e.telefon),
+                clean(e.email),
+                clean(e.erstgespraech),
+                clean(e.stimmung),
+                clean(e.netzwerk),
+                clean(e.mdm),
+                clean(e.bedarfe),
+                clean(e.format),
+                clean(e.notizen),
+                clean(e.naechsterTermin),
+                clean(e.bearbeiter)
+            ].join(";");
+            csvContent += row + "\n";
+        });
+
+        // Blob erstellen und Download triggern
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "KMZ_Beratungsprotokoll_" + new Date().toISOString().slice(0,10) + ".csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        showNotification('CSV-Datei wurde heruntergeladen!', 'success');
+    }
+
+    // Custom Confirm Dialog (alert/confirm funktionieren nicht im iframe)
+    function showConfirmDialog(message, onConfirm) {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <p style="margin-bottom:20px; color:#333;">${escapeHtml(message)}</p>
+                <div style="display:flex; justify-content:flex-end; gap:10px;">
+                    <button class="btn-modal btn-cancel">Abbrechen</button>
+                    <button class="btn-modal btn-confirm">Bestätigen</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        modal.querySelector('.btn-cancel').onclick = () => modal.remove();
+        modal.querySelector('.btn-confirm').onclick = () => {
+            modal.remove();
+            onConfirm();
+        };
+
+        // Schließen bei Klick außerhalb
+        modal.onclick = (e) => {
+            if (e.target === modal) modal.remove();
+        };
+    }
+
+    // Notification System
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        // Automatisch nach 3 Sekunden entfernen
+        setTimeout(() => {
+            notification.classList.add('fade-out');
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+</script>
+
+</body>
+</html>
