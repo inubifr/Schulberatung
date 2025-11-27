@@ -43,6 +43,7 @@
         const HelpCircle = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></IconBase>;
         const Mic = (props) => <IconBase {...props}><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></IconBase>;
         const Video = (props) => <IconBase {...props}><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></IconBase>;
+        const Mail = (props) => <IconBase {...props}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></IconBase>;
 
 
         // --- HAUPTAPP ---
@@ -237,6 +238,49 @@
                 link.href = URL.createObjectURL(blob);
                 link.download = `beratungsprotokolle_bw_full.csv`;
                 link.click();
+            };
+
+            // NEU: CSV Export + Mail öffnen
+            const exportiereUndSendeMail = () => {
+                if (protokolle.length === 0) {
+                    setUiError('Keine Protokolle zum Exportieren vorhanden.');
+                    return;
+                }
+                
+                // Zuerst CSV exportieren
+                exportiereCSV();
+                
+                // Dann Mail-Fenster öffnen
+                // Nimm das erste Protokoll für den Betreff (oder alle, wenn mehrere)
+                const schulnamen = [...new Set(protokolle.map(p => p.schule))].join(', ');
+                
+                // Bedarfe zusammenfassen
+                let bedarfeText = '';
+                protokolle.forEach((p, idx) => {
+                    const wuensche = getAlleWuensche(p);
+                    if (wuensche.length > 0) {
+                        bedarfeText += `\n\n${p.schule} (${p.datum}):\n`;
+                        wuensche.forEach(w => {
+                            bedarfeText += `- ${w}\n`;
+                        });
+                    }
+                });
+                
+                const betreff = `Beratungsanfrage (${schulnamen})`;
+                const mailBody = `Sehr geehrte Damen und Herren,
+
+anbei finden Sie die Zusammenfassung unserer Beratungsbedarfe.
+
+WICHTIG: Bitte fügen Sie die exportierte CSV-Datei als Anhang hinzu.
+
+Zusammenfassung der Beratungsbedarfe:${bedarfeText}
+
+Mit freundlichen Grüßen`;
+
+                const mailtoLink = `mailto:?subject=${encodeURIComponent(betreff)}&body=${encodeURIComponent(mailBody)}`;
+                window.location.href = mailtoLink;
+                
+                setUiError('');
             };
 
             // --- UI Components ---
@@ -644,13 +688,22 @@
                             <div className="mt-10 bg-white rounded shadow-sm p-5">
                                 <div className="flex items-center justify-between mb-5">
                                     <h2 className="text-xl font-bold text-gray-900">Gespeicherte Protokolle</h2>
-                                    <button
-                                        onClick={exportiereCSV}
-                                        className="flex items-center gap-2 px-3 py-1.5 bg-gray-200 text-gray-800 font-semibold rounded hover:bg-gray-300 transition-colors text-sm"
-                                    >
-                                        <Download className="w-4 h-4" />
-                                        CSV Export
-                                    </button>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={exportiereCSV}
+                                            className="flex items-center gap-2 px-3 py-1.5 bg-gray-200 text-gray-800 font-semibold rounded hover:bg-gray-300 transition-colors text-sm"
+                                        >
+                                            <Download className="w-4 h-4" />
+                                            CSV Export
+                                        </button>
+                                        <button
+                                            onClick={exportiereUndSendeMail}
+                                            className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition-colors text-sm"
+                                        >
+                                            <Mail className="w-4 h-4" />
+                                            CSV + E-Mail
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div className="overflow-x-auto">
