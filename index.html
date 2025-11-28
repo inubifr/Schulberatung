@@ -43,6 +43,9 @@
         const HelpCircle = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></IconBase>;
         const Mic = (props) => <IconBase {...props}><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></IconBase>;
         const Video = (props) => <IconBase {...props}><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></IconBase>;
+        const FileEdit = (props) => <IconBase {...props}><path d="M4 13.5V4a2 2 0 0 1 2-2h8.5L20 7.5V20a2 2 0 0 1-2 2h-5.5"/><polyline points="14 2 14 8 20 8"/><path d="M10.42 12.61a2.1 2.1 0 1 1 2.97 2.97L7.95 21 4 22l.99-3.95 5.43-5.44Z"/></IconBase>;
+        const ThumbsUp = (props) => <IconBase {...props}><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"/></IconBase>;
+        const AlertTriangle = (props) => <IconBase {...props}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></IconBase>;
 
         // --- HAUPTAPP ---
 
@@ -62,8 +65,9 @@
                 datum: new Date().toISOString().split('T')[0],
                 
                 // Einstieg
-                stimmung: '',
                 digitalisierung: '',
+                wasKlapptGut: '',
+                handlungsbedarf: '',
                 
                 // Infrastruktur (Status + Beratungsbedarf Flag)
                 netzwerk: { status: '', beratung: false },
@@ -84,6 +88,9 @@
                     handyregeln: false,
                     ki: false
                 },
+                
+                // Notizen
+                notizen: '',
                 
                 // Rahmenbedingungen
                 format: '',
@@ -214,13 +221,13 @@
                 const headers = [
                     'Datum', 'Verantwortlich', 'Schule', 'Schulart', 'Träger', 
                     'Ansprechpartner', 'Email', 
-                    'Stimmung', 'Digitalisierungsstand',
+                    'Digitalisierungsstand', 'Was klappt gut', 'Handlungsbedarf',
                     'Netzwerk Status', 'iPad Status', 'MDM Status',
-                    'Alle Bedarfe (Infra & Themen)', 'Nächster Termin'
+                    'Alle Bedarfe (Infra & Themen)', 'Notizen', 'Nächster Termin'
                 ];
                 
                 const rows = protokolle.map(p => {
-                    const wuensche = getAlleWuensche(p).join('; ');
+                    const wuensche = getAlleWuensche(p).map(w => `- ${w}`).join('\n');
                     return [
                         p.datum, 
                         p.verantwortlich, 
@@ -229,19 +236,21 @@
                         p.traeger, 
                         p.ansprechpartner, 
                         p.email,
-                        p.stimmung,
                         p.digitalisierung,
+                        p.wasKlapptGut,
+                        p.handlungsbedarf,
                         p.netzwerk.status, 
                         p.ipad.nutzung,    
                         p.mdm.status,      
                         wuensche, 
+                        p.notizen,
                         p.naechsterTerminDatum
                     ];
                 });
 
                 const csvContent = [
                     headers.map(h => `"${h}"`).join(','),
-                    ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+                    ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
                 ].join('\n');
 
                 const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -435,26 +444,43 @@
                             {/* Phase 2: Einstieg */}
                             <div className="bg-white p-5 rounded shadow-sm">
                                 <SectionHeader title="2. Einstieg" />
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <InputLabel label="Stimmung" />
-                                        <div className="grid grid-cols-2 gap-2 mt-1">
-                                            {['entspannt', 'gestresst', 'interessiert', 'abwehrend'].map(opt => (
-                                                <RectButton 
-                                                    key={opt} 
-                                                    label={opt.charAt(0).toUpperCase() + opt.slice(1)} 
-                                                    isSelected={aktuellesProtokoll.stimmung === opt} 
-                                                    onClick={() => handleSingleSelect('stimmung', null, opt)} 
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
+                                <div className="grid grid-cols-1 gap-6">
                                     <div>
                                         <InputLabel label="Digitalisierungs-Stand" />
-                                        <div className="grid grid-cols-1 gap-2 mt-1">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-1">
                                             <RectButton label="Gut aufgestellt" isSelected={aktuellesProtokoll.digitalisierung === 'gut'} onClick={() => handleSingleSelect('digitalisierung', null, 'gut')} />
                                             <RectButton label="Probleme vorhanden" isSelected={aktuellesProtokoll.digitalisierung === 'probleme'} onClick={() => handleSingleSelect('digitalisierung', null, 'probleme')} />
                                             <RectButton label="Am Anfang" isSelected={aktuellesProtokoll.digitalisierung === 'anfang'} onClick={() => handleSingleSelect('digitalisierung', null, 'anfang')} />
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <ThumbsUp className="w-4 h-4 text-green-600" />
+                                                <InputLabel label="Was klappt gut?" />
+                                            </div>
+                                            <textarea 
+                                                value={aktuellesProtokoll.wasKlapptGut} 
+                                                onChange={(e) => handleTextChange('wasKlapptGut', e.target.value)}
+                                                placeholder="Positive Aspekte, funktionierende Prozesse..."
+                                                rows="3"
+                                                className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors resize-none"
+                                            />
+                                        </div>
+                                        
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <AlertTriangle className="w-4 h-4 text-orange-600" />
+                                                <InputLabel label="Wo gibt es Handlungsbedarf?" />
+                                            </div>
+                                            <textarea 
+                                                value={aktuellesProtokoll.handlungsbedarf} 
+                                                onChange={(e) => handleTextChange('handlungsbedarf', e.target.value)}
+                                                placeholder="Herausforderungen, Problembereiche..."
+                                                rows="3"
+                                                className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors resize-none"
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -485,9 +511,20 @@
                                                 <InputLabel label="Anzahl ca." />
                                                 <input 
                                                     type="text" 
+                                                    inputMode="numeric"
                                                     value={aktuellesProtokoll.ipad.anzahl} 
-                                                    onChange={(e) => handleNestedTextChange('ipad', 'anzahl', e.target.value)}
+                                                    onChange={(e) => {
+                                                        setUiError('');
+                                                        setAktuellesProtokoll(prev => ({
+                                                            ...prev,
+                                                            ipad: {
+                                                                ...prev.ipad,
+                                                                anzahl: e.target.value
+                                                            }
+                                                        }));
+                                                    }}
                                                     className="w-full px-2 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors"
+                                                    placeholder="z.B. 50"
                                                 />
                                             </div>
                                             <InputLabel label="Nutzung" />
@@ -541,7 +578,7 @@
                                     </h2>
                                 </div>
                                 
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
                                     <BedarfCard 
                                         label="iPad Basics" 
                                         icon={Laptop}
@@ -606,6 +643,20 @@
                                         onClick={() => toggleBedarf('ki')} 
                                     />
                                 </div>
+
+                                <div className="mt-4">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <FileEdit className="w-4 h-4 text-gray-600" />
+                                        <InputLabel label="Notizen / Weitere Wünsche" />
+                                    </div>
+                                    <textarea 
+                                        value={aktuellesProtokoll.notizen} 
+                                        onChange={(e) => handleTextChange('notizen', e.target.value)}
+                                        placeholder="Weitere Anmerkungen, spezielle Wünsche, Details..."
+                                        rows="4"
+                                        className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors resize-none"
+                                    />
+                                </div>
                             </div>
 
                             {/* Phase 5: Rahmenbedingungen */}
@@ -625,6 +676,7 @@
                                         <div className="space-y-1 mt-1">
                                             <RectButton label="Vormittag" isSelected={aktuellesProtokoll.zeit === 'vormittag'} onClick={() => handleSingleSelect('zeit', null, 'vormittag')} />
                                             <RectButton label="Nachmittag" isSelected={aktuellesProtokoll.zeit === 'nachmittag'} onClick={() => handleSingleSelect('zeit', null, 'nachmittag')} />
+                                            <RectButton label="Ganztags" isSelected={aktuellesProtokoll.zeit === 'ganztags'} onClick={() => handleSingleSelect('zeit', null, 'ganztags')} />
                                         </div>
                                     </div>
                                     <div>
@@ -719,7 +771,7 @@
                                                             <ul className="list-none space-y-1 text-xs">
                                                                 {getAlleWuensche(p).map((w, i) => (
                                                                     <li key={i} className="flex items-start gap-1">
-                                                                        <span className="text-red-600 font-bold">➜</span> {w}
+                                                                        <span className="text-red-600 font-bold">-</span> {w}
                                                                     </li>
                                                                 ))}
                                                             </ul>
@@ -730,7 +782,7 @@
                                                     <td className="p-2 align-top text-right">
                                                         <button
                                                             onClick={() => loeschenProtokoll(p.id)}
-                                                            className="text-red-600 hover:text-red-800 p-1.5 rounded hover:bg-red-50 transition-colors"
+                                            className="text-red-600 hover:text-red-800 p-1.5 rounded hover:bg-red-50 transition-colors"
                                                         >
                                                             <Trash2 className="w-4 h-4" />
                                                         </button>
