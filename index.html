@@ -46,6 +46,8 @@
         const FileEdit = (props) => <IconBase {...props}><path d="M4 13.5V4a2 2 0 0 1 2-2h8.5L20 7.5V20a2 2 0 0 1-2 2h-5.5"/><polyline points="14 2 14 8 20 8"/><path d="M10.42 12.61a2.1 2.1 0 1 1 2.97 2.97L7.95 21 4 22l.99-3.95 5.43-5.44Z"/></IconBase>;
         const ThumbsUp = (props) => <IconBase {...props}><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"/></IconBase>;
         const AlertTriangle = (props) => <IconBase {...props}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></IconBase>;
+        const Monitor = (props) => <IconBase {...props}><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></IconBase>;
+        const Projector = (props) => <IconBase {...props}><path d="M5 12h14"/><path d="M12 5v14"/><circle cx="12" cy="12" r="9"/></IconBase>; // Placeholder for Projector
 
         // --- HAUPTAPP ---
 
@@ -74,6 +76,10 @@
                 ipad: { anzahl: '', nutzung: '', beratung: false },
                 mdm: { system: '', status: '', beratung: false },
                 geraeteverleih: { bekannt: '', beratung: false },
+                // NEU: PC Räume
+                pcRaeume: { anzahl: '', loesung: '', beratung: false },
+                // NEU: Präsentationstechnik
+                praesentation: { funktioniert: '', geraete: '', spiegelung: '', beratung: false },
                 
                 // Zentraler Fortbildungsbedarf (Pädagogik & Themen)
                 bedarf: {
@@ -82,9 +88,9 @@
                     video: false,
                     coding: false,
                     druck3d: false,
-                    sesam: false,
-                    taskcards: false,
-                    jugendschutz: false,
+                    sesam: false, // Jetzt Medienbildung
+                    taskcards: false, // Jetzt Angebote LMZ/KMZ
+                    jugendschutz: false, // Jetzt Jugendmedienschutz
                     handyregeln: false,
                     ki: false
                 },
@@ -107,9 +113,9 @@
                 video: 'Video Produktion / Film',
                 coding: 'Coding & Robotik',
                 druck3d: '3D Druck',
-                sesam: 'SESAM Mediathek',
-                taskcards: 'TaskCards',
-                jugendschutz: 'Jugendmedienschutz / Elternabend',
+                sesam: 'Medienbildung', // Umbenannt
+                taskcards: 'Angebote LMZ/KMZ', // Umbenannt
+                jugendschutz: 'Jugendmedienschutz', // Umbenannt
                 handyregeln: 'Handyregeln / Nutzungsordnung',
                 ki: 'Künstliche Intelligenz'
             };
@@ -122,6 +128,8 @@
                 if (protokoll.ipad.beratung) wuensche.push('Infrastruktur: iPad Konzept Hilfe');
                 if (protokoll.mdm.beratung) wuensche.push('Infrastruktur: MDM Support');
                 if (protokoll.geraeteverleih.beratung) wuensche.push('Infrastruktur: Geräteverleih Info');
+                if (protokoll.pcRaeume.beratung) wuensche.push('Infrastruktur: PC Räume Hilfe');
+                if (protokoll.praesentation.beratung) wuensche.push('Infrastruktur: Präsentationstechnik Hilfe');
 
                 // 2. Pädagogische Themen prüfen
                 Object.keys(protokoll.bedarf).forEach(key => {
@@ -222,7 +230,8 @@
                     'Datum', 'Verantwortlich', 'Schule', 'Schulart', 'Träger', 
                     'Ansprechpartner', 'Email', 
                     'Digitalisierungsstand', 'Was klappt gut', 'Handlungsbedarf',
-                    'Netzwerk Status', 'iPad Status', 'MDM Status',
+                    'Netzwerk Status', 'iPad Status', 'MDM Status', 'PC Anzahl', 'Netzwerklösung', 
+                    'Präsentation Funktioniert', 'Präsentation Geräte', 'Spiegelung möglich',
                     'Alle Bedarfe (Infra & Themen)', 'Notizen', 'Nächster Termin'
                 ];
                 
@@ -241,7 +250,12 @@
                         p.handlungsbedarf,
                         p.netzwerk.status, 
                         p.ipad.nutzung,    
-                        p.mdm.status,      
+                        p.mdm.status,
+                        p.pcRaeume.anzahl,
+                        p.pcRaeume.loesung,
+                        p.praesentation.funktioniert,
+                        p.praesentation.geraete,
+                        p.praesentation.spiegelung,
                         wuensche, 
                         p.notizen,
                         p.naechsterTerminDatum
@@ -515,13 +529,7 @@
                                                     value={aktuellesProtokoll.ipad.anzahl} 
                                                     onChange={(e) => {
                                                         setUiError('');
-                                                        setAktuellesProtokoll(prev => ({
-                                                            ...prev,
-                                                            ipad: {
-                                                                ...prev.ipad,
-                                                                anzahl: e.target.value
-                                                            }
-                                                        }));
+                                                        handleNestedTextChange('ipad', 'anzahl', e.target.value);
                                                     }}
                                                     className="w-full px-2 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors"
                                                     placeholder="z.B. 50"
@@ -536,6 +544,73 @@
                                         <BeratungToggle 
                                             isSelected={aktuellesProtokoll.ipad.beratung} 
                                             onClick={() => toggleInfraBeratung('ipad')} 
+                                        />
+                                    </Card>
+
+                                    {/* NEU: PC Räume */}
+                                    <Card title="PC Räume">
+                                        <div>
+                                            <div className="mb-2">
+                                                <InputLabel label="Wie viele PCs" />
+                                                <input 
+                                                    type="text" 
+                                                    value={aktuellesProtokoll.pcRaeume.anzahl} 
+                                                    onChange={(e) => handleNestedTextChange('pcRaeume', 'anzahl', e.target.value)}
+                                                    className="w-full px-2 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors"
+                                                    placeholder="Anzahl..."
+                                                />
+                                            </div>
+                                            <div>
+                                                <InputLabel label="Netzwerklösung" />
+                                                <input 
+                                                    type="text" 
+                                                    value={aktuellesProtokoll.pcRaeume.loesung} 
+                                                    onChange={(e) => handleNestedTextChange('pcRaeume', 'loesung', e.target.value)}
+                                                    className="w-full px-2 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors"
+                                                    placeholder="z.B. PaedML, MNSpro..."
+                                                />
+                                            </div>
+                                        </div>
+                                        <BeratungToggle 
+                                            isSelected={aktuellesProtokoll.pcRaeume.beratung} 
+                                            onClick={() => toggleInfraBeratung('pcRaeume')} 
+                                        />
+                                    </Card>
+
+                                    {/* NEU: Präsentationstechnik */}
+                                    <Card title="Präsentationstechnik">
+                                        <div>
+                                            <div className="mb-2">
+                                                <InputLabel label="Funktioniert Präsentationstechnik?" />
+                                                <input 
+                                                    type="text" 
+                                                    value={aktuellesProtokoll.praesentation.funktioniert} 
+                                                    onChange={(e) => handleNestedTextChange('praesentation', 'funktioniert', e.target.value)}
+                                                    className="w-full px-2 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors"
+                                                    placeholder="Ja / Nein / Teilweise..."
+                                                />
+                                            </div>
+                                            <div className="mb-2">
+                                                <InputLabel label="Vorhandene Präsentationsgeräte" />
+                                                <input 
+                                                    type="text" 
+                                                    value={aktuellesProtokoll.praesentation.geraete} 
+                                                    onChange={(e) => handleNestedTextChange('praesentation', 'geraete', e.target.value)}
+                                                    className="w-full px-2 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors"
+                                                    placeholder="Beamer, AppleTV, Displays..."
+                                                />
+                                            </div>
+                                            <div>
+                                                <InputLabel label="Spiegelung möglich?" />
+                                                <div className="grid grid-cols-2 gap-2 mt-1">
+                                                    <RectButton label="Ja" isSelected={aktuellesProtokoll.praesentation.spiegelung === 'ja'} onClick={() => handleSingleSelect('praesentation', 'spiegelung', 'ja')} />
+                                                    <RectButton label="Nein" isSelected={aktuellesProtokoll.praesentation.spiegelung === 'nein'} onClick={() => handleSingleSelect('praesentation', 'spiegelung', 'nein')} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <BeratungToggle 
+                                            isSelected={aktuellesProtokoll.praesentation.beratung} 
+                                            onClick={() => toggleInfraBeratung('praesentation')} 
                                         />
                                     </Card>
 
@@ -613,19 +688,19 @@
                                         onClick={() => toggleBedarf('druck3d')} 
                                     />
                                     <BedarfCard 
-                                        label="SESAM Mediathek" 
+                                        label="Medienbildung" 
                                         icon={BookOpen}
                                         isSelected={aktuellesProtokoll.bedarf.sesam} 
                                         onClick={() => toggleBedarf('sesam')} 
                                     />
                                     <BedarfCard 
-                                        label="TaskCards" 
+                                        label="Angebote LMZ/KMZ" 
                                         icon={BookOpen}
                                         isSelected={aktuellesProtokoll.bedarf.taskcards} 
                                         onClick={() => toggleBedarf('taskcards')} 
                                     />
                                     <BedarfCard 
-                                        label="Jugendschutz" 
+                                        label="Jugendmedienschutz" 
                                         icon={Shield}
                                         isSelected={aktuellesProtokoll.bedarf.jugendschutz} 
                                         onClick={() => toggleBedarf('jugendschutz')} 
