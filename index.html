@@ -47,7 +47,7 @@
         const ThumbsUp = (props) => <IconBase {...props}><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"/></IconBase>;
         const AlertTriangle = (props) => <IconBase {...props}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></IconBase>;
         const Monitor = (props) => <IconBase {...props}><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></IconBase>;
-        const Projector = (props) => <IconBase {...props}><path d="M5 12h14"/><path d="M12 5v14"/><circle cx="12" cy="12" r="9"/></IconBase>; // Placeholder for Projector
+        const Projector = (props) => <IconBase {...props}><path d="M5 12h14"/><path d="M12 5v14"/><circle cx="12" cy="12" r="9"/></IconBase>;
 
         // --- HAUPTAPP ---
 
@@ -113,9 +113,9 @@
                 video: 'Video Produktion / Film',
                 coding: 'Coding & Robotik',
                 druck3d: '3D Druck',
-                sesam: 'Medienbildung', // Umbenannt
-                taskcards: 'Angebote LMZ/KMZ', // Umbenannt
-                jugendschutz: 'Jugendmedienschutz', // Umbenannt
+                sesam: 'Medienbildung', 
+                taskcards: 'Angebote LMZ/KMZ', 
+                jugendschutz: 'Jugendmedienschutz', 
                 handyregeln: 'Handyregeln / Nutzungsordnung',
                 ki: 'Künstliche Intelligenz'
             };
@@ -406,6 +406,7 @@
                                             <option value="">Wählen...</option>
                                             <option value="Landkreis">Landkreis</option>
                                             <option value="Stadt">Stadt</option>
+                                            <option value="Kommunal">Kommunaler Träger</option>
                                         </select>
                                     </div>
                                     <div>
@@ -505,20 +506,7 @@
                                 <SectionHeader title="3. Infrastruktur" />
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
                                     
-                                    <Card title="Netzwerk / WLAN">
-                                        <div>
-                                            <InputLabel label="Status (Ist-Zustand)" />
-                                            <div className="grid grid-cols-2 gap-2 mt-1">
-                                            <RectButton label="Stabil" isSelected={aktuellesProtokoll.netzwerk.status === 'stabil'} onClick={() => handleSingleSelect('netzwerk', 'status', 'stabil')} />
-                                            <RectButton label="Instabil" isSelected={aktuellesProtokoll.netzwerk.status === 'instabil'} onClick={() => handleSingleSelect('netzwerk', 'status', 'instabil')} />
-                                            </div>
-                                        </div>
-                                        <BeratungToggle 
-                                            isSelected={aktuellesProtokoll.netzwerk.beratung} 
-                                            onClick={() => toggleInfraBeratung('netzwerk')} 
-                                        />
-                                    </Card>
-
+                                    {/* 1. iPads / Tablets */}
                                     <Card title="iPads / Tablets">
                                         <div>
                                             <div className="mb-2">
@@ -547,7 +535,22 @@
                                         />
                                     </Card>
 
-                                    {/* NEU: PC Räume */}
+                                    {/* 2. MDM */}
+                                    <Card title="MDM">
+                                        <div>
+                                            <InputLabel label="System läuft?" />
+                                            <div className="grid grid-cols-2 gap-2 mt-1">
+                                            <RectButton label="Ja, rund" isSelected={aktuellesProtokoll.mdm.status === 'rund'} onClick={() => handleSingleSelect('mdm', 'status', 'rund')} />
+                                            <RectButton label="Nein, Probleme" isSelected={aktuellesProtokoll.mdm.status === 'probleme'} onClick={() => handleSingleSelect('mdm', 'status', 'probleme')} />
+                                            </div>
+                                        </div>
+                                        <BeratungToggle 
+                                            isSelected={aktuellesProtokoll.mdm.beratung} 
+                                            onClick={() => toggleInfraBeratung('mdm')} 
+                                        />
+                                    </Card>
+
+                                    {/* 3. PC Räume */}
                                     <Card title="PC Räume">
                                         <div>
                                             <div className="mb-2">
@@ -577,7 +580,22 @@
                                         />
                                     </Card>
 
-                                    {/* NEU: Präsentationstechnik */}
+                                    {/* 4. Netzwerk / WLAN */}
+                                    <Card title="Netzwerk / WLAN">
+                                        <div>
+                                            <InputLabel label="Status (Ist-Zustand)" />
+                                            <div className="grid grid-cols-2 gap-2 mt-1">
+                                            <RectButton label="Stabil" isSelected={aktuellesProtokoll.netzwerk.status === 'stabil'} onClick={() => handleSingleSelect('netzwerk', 'status', 'stabil')} />
+                                            <RectButton label="Instabil" isSelected={aktuellesProtokoll.netzwerk.status === 'instabil'} onClick={() => handleSingleSelect('netzwerk', 'status', 'instabil')} />
+                                            </div>
+                                        </div>
+                                        <BeratungToggle 
+                                            isSelected={aktuellesProtokoll.netzwerk.beratung} 
+                                            onClick={() => toggleInfraBeratung('netzwerk')} 
+                                        />
+                                    </Card>
+
+                                    {/* 5. Präsentationstechnik */}
                                     <Card title="Präsentationstechnik">
                                         <div>
                                             <div className="mb-2">
@@ -614,20 +632,7 @@
                                         />
                                     </Card>
 
-                                    <Card title="MDM">
-                                        <div>
-                                            <InputLabel label="System läuft?" />
-                                            <div className="grid grid-cols-2 gap-2 mt-1">
-                                            <RectButton label="Ja, rund" isSelected={aktuellesProtokoll.mdm.status === 'rund'} onClick={() => handleSingleSelect('mdm', 'status', 'rund')} />
-                                            <RectButton label="Nein, Probleme" isSelected={aktuellesProtokoll.mdm.status === 'probleme'} onClick={() => handleSingleSelect('mdm', 'status', 'probleme')} />
-                                            </div>
-                                        </div>
-                                        <BeratungToggle 
-                                            isSelected={aktuellesProtokoll.mdm.beratung} 
-                                            onClick={() => toggleInfraBeratung('mdm')} 
-                                        />
-                                    </Card>
-
+                                    {/* 6. Geräteverleih KMZ */}
                                     <Card title="Geräteverleih KMZ">
                                         <div>
                                             <InputLabel label="Bekanntheit" />
