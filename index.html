@@ -17,6 +17,8 @@
 
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -46,7 +48,6 @@
         const FileEdit = (props) => <IconBase {...props}><path d="M4 13.5V4a2 2 0 0 1 2-2h8.5L20 7.5V20a2 2 0 0 1-2 2h-5.5"/><polyline points="14 2 14 8 20 8"/><path d="M10.42 12.61a2.1 2.1 0 1 1 2.97 2.97L7.95 21 4 22l.99-3.95 5.43-5.44Z"/></IconBase>;
         const ThumbsUp = (props) => <IconBase {...props}><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"/></IconBase>;
         const AlertTriangle = (props) => <IconBase {...props}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></IconBase>;
-        const Film = (props) => <IconBase {...props}><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></IconBase>;
 
         // --- UI COMPONENTS ---
 
@@ -67,8 +68,15 @@
             );
         };
 
-        const BeratungToggle = ({ isSelected, onClick }) => {
-            let baseClasses = "mt-3 w-full flex items-center justify-center gap-2 py-1.5 rounded text-xs font-bold uppercase tracking-wide border transition-all ";
+        const BeratungToggle = ({ isSelected, onClick, small }) => {
+            let baseClasses = "flex items-center justify-center gap-2 py-1.5 rounded text-xs font-bold uppercase tracking-wide border transition-all ";
+            
+            if (small) {
+                baseClasses += "w-full mt-2 ";
+            } else {
+                baseClasses += "w-full mt-3 ";
+            }
+
             if (isSelected) {
                 baseClasses += "bg-red-100 text-red-700 border-red-300";
             } else {
@@ -78,7 +86,7 @@
             return (
                 <button onClick={onClick} className={baseClasses}>
                     <HelpCircle className="w-3.5 h-3.5" />
-                    {isSelected ? "Beratungsbedarf vorgemerkt" : "Beratungsbedarf?"}
+                    {isSelected ? (small ? "Vorgemerkt" : "Beratungsbedarf vorgemerkt") : (small ? "Beratung?" : "Beratungsbedarf?")}
                 </button>
             );
         };
@@ -112,9 +120,9 @@
         );
 
         const Card = ({ title, children }) => (
-            <div className="bg-white rounded border border-gray-200 shadow-sm hover:shadow-md transition-shadow p-4 h-full flex flex-col justify-between">
-                <div>
-                    <h3 className="font-bold text-gray-800 mb-2 text-base">{title}</h3>
+            <div className="bg-white rounded border border-gray-200 shadow-sm hover:shadow-md transition-shadow p-4 h-full flex flex-col">
+                <h3 className="font-bold text-gray-800 mb-2 text-base shrink-0">{title}</h3>
+                <div className="flex-grow flex flex-col justify-between">
                     {children}
                 </div>
             </div>
@@ -153,9 +161,10 @@
                 pcRaeume: { anzahl: '', loesung: '', beratung: false },
                 praesentation: { funktioniert: '', geraete: '', spiegelung: '', beratung: false },
                 
-                // NEU: Verleih
+                // Verleih
                 geraeteverleih: { bekannt: '', beratung: false },
-                medienverleih: { bekannt: '', beratung: false }, // HIER NEU HINZUGEFÜGT
+                medienverleih: { bekannt: '', beratung: false },
+                verleihNotiz: '',
                 
                 // Zentraler Fortbildungsbedarf (Pädagogik & Themen)
                 bedarf: {
@@ -206,7 +215,7 @@
                 if (protokoll.pcRaeume.beratung) wuensche.push('Infrastruktur: PC Räume Hilfe');
                 if (protokoll.praesentation.beratung) wuensche.push('Infrastruktur: Präsentationstechnik Hilfe');
                 
-                // NEU: Verleih Bedarfe
+                // Verleih Bedarfe
                 if (protokoll.geraeteverleih.beratung) wuensche.push('Infrastruktur: Geräteverleih Info');
                 if (protokoll.medienverleih.beratung) wuensche.push('Infrastruktur: Medienverleih Info');
 
@@ -311,7 +320,7 @@
                     'Digitalisierungsstand', 'Was klappt gut', 'Handlungsbedarf',
                     'Netzwerk Status', 'iPad Status', 'MDM Status', 'PC Anzahl', 'Netzwerklösung', 
                     'Präsentation Funktioniert', 'Präsentation Geräte', 'Spiegelung möglich',
-                    'Geräteverleih Bekannt', 'Medienverleih Bekannt', // NEU
+                    'Geräteverleih Bekannt', 'Medienverleih Bekannt', 'Verleih Notiz',
                     'Alle Bedarfe (Infra & Themen)', 'Notizen', 'Nächster Termin'
                 ];
                 
@@ -336,8 +345,9 @@
                         p.praesentation.funktioniert,
                         p.praesentation.geraete,
                         p.praesentation.spiegelung,
-                        p.geraeteverleih.bekannt, // NEU
-                        p.medienverleih.bekannt,  // NEU
+                        p.geraeteverleih.bekannt,
+                        p.medienverleih.bekannt,
+                        p.verleihNotiz,
                         wuensche, 
                         p.notizen,
                         p.naechsterTerminDatum
@@ -359,7 +369,7 @@
             const aktuelleWuensche = getAlleWuensche(aktuellesProtokoll);
 
             return (
-                <div className="min-h-screen bg-gray-100 text-gray-800 font-sans p-4 md:p-6">
+                <div className="min-h-screen bg-gray-100 text-gray-800 font-sans p-4 md:p-6 fade-in">
                     <div className="max-w-5xl mx-auto">
                         
                         {/* Header */}
@@ -634,34 +644,52 @@
                                         />
                                     </Card>
 
-                                    {/* 6. Geräteverleih KMZ */}
-                                    <Card title="Geräteverleih KMZ">
-                                        <div>
-                                            <InputLabel label="Bekanntheit" />
-                                            <div className="flex flex-col gap-2 mt-1">
-                                            <RectButton label="Nutzen wir bereits" isSelected={aktuellesProtokoll.geraeteverleih.bekannt === 'nutzen'} onClick={() => handleSingleSelect('geraeteverleih', 'bekannt', 'nutzen')} />
-                                            <RectButton label="Nicht bekannt / Interessant" isSelected={aktuellesProtokoll.geraeteverleih.bekannt === 'interessant'} onClick={() => handleSingleSelect('geraeteverleih', 'bekannt', 'interessant')} />
+                                    {/* 6. Verleihangebot (DOPPELBLOCK) */}
+                                    <Card title="Verleihangebot KMZ">
+                                        <div className="grid grid-cols-2 gap-4 mb-3 shrink-0">
+                                            {/* Linke Spalte: Geräte */}
+                                            <div className="flex flex-col justify-between border-r border-gray-100 pr-2">
+                                                <div>
+                                                    <InputLabel label="Geräteverleih" />
+                                                    <div className="flex flex-col gap-2 mt-1">
+                                                        <RectButton label="Nutzen wir" isSelected={aktuellesProtokoll.geraeteverleih.bekannt === 'nutzen'} onClick={() => handleSingleSelect('geraeteverleih', 'bekannt', 'nutzen')} />
+                                                        <RectButton label="Unbekannt" isSelected={aktuellesProtokoll.geraeteverleih.bekannt === 'interessant'} onClick={() => handleSingleSelect('geraeteverleih', 'bekannt', 'interessant')} />
+                                                    </div>
+                                                </div>
+                                                <BeratungToggle 
+                                                    small={true}
+                                                    isSelected={aktuellesProtokoll.geraeteverleih.beratung} 
+                                                    onClick={() => toggleInfraBeratung('geraeteverleih')} 
+                                                />
                                             </div>
-                                        </div>
-                                        <BeratungToggle 
-                                            isSelected={aktuellesProtokoll.geraeteverleih.beratung} 
-                                            onClick={() => toggleInfraBeratung('geraeteverleih')} 
-                                        />
-                                    </Card>
 
-                                    {/* 7. Medienverleih KMZ (NEU HINZUGEFÜGT) */}
-                                    <Card title="Medienverleih KMZ">
-                                        <div>
-                                            <InputLabel label="Bekanntheit" />
-                                            <div className="flex flex-col gap-2 mt-1">
-                                            <RectButton label="Nutzen wir bereits" isSelected={aktuellesProtokoll.medienverleih.bekannt === 'nutzen'} onClick={() => handleSingleSelect('medienverleih', 'bekannt', 'nutzen')} />
-                                            <RectButton label="Nicht bekannt / Interessant" isSelected={aktuellesProtokoll.medienverleih.bekannt === 'interessant'} onClick={() => handleSingleSelect('medienverleih', 'bekannt', 'interessant')} />
+                                            {/* Rechte Spalte: Medien */}
+                                            <div className="flex flex-col justify-between pl-2">
+                                                <div>
+                                                    <InputLabel label="Medienverleih" />
+                                                    <div className="flex flex-col gap-2 mt-1">
+                                                        <RectButton label="Nutzen wir" isSelected={aktuellesProtokoll.medienverleih.bekannt === 'nutzen'} onClick={() => handleSingleSelect('medienverleih', 'bekannt', 'nutzen')} />
+                                                        <RectButton label="Unbekannt" isSelected={aktuellesProtokoll.medienverleih.bekannt === 'interessant'} onClick={() => handleSingleSelect('medienverleih', 'bekannt', 'interessant')} />
+                                                    </div>
+                                                </div>
+                                                <BeratungToggle 
+                                                    small={true}
+                                                    isSelected={aktuellesProtokoll.medienverleih.beratung} 
+                                                    onClick={() => toggleInfraBeratung('medienverleih')} 
+                                                />
                                             </div>
                                         </div>
-                                        <BeratungToggle 
-                                            isSelected={aktuellesProtokoll.medienverleih.beratung} 
-                                            onClick={() => toggleInfraBeratung('medienverleih')} 
-                                        />
+                                        
+                                        {/* GEMEINSAMES TEXTFELD UNTER BEIDEN SPALTEN - FÜLLT RESTPLATZ */}
+                                        <div className="mt-2 pt-2 border-t border-gray-100 flex flex-col flex-grow">
+                                            <InputLabel label="Bemerkung / Wunsch (Verleih)" />
+                                            <textarea 
+                                                value={aktuellesProtokoll.verleihNotiz} 
+                                                onChange={(e) => handleTextChange('verleihNotiz', e.target.value)}
+                                                placeholder="Welche Geräte? Welche Medien? Wann?"
+                                                className="w-full px-2 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded focus:border-gray-900 focus:ring-0 outline-none transition-colors resize-none mt-1 flex-grow h-full min-h-[60px]"
+                                            />
+                                        </div>
                                     </Card>
 
                                 </div>
